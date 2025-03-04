@@ -1,0 +1,21 @@
+<div class="optical_axis_test-root">
+    <div class="main-content">
+        <el-steps :active="active" align-center finish-status="success" class="el-steps-optical-axis-test">
+            <el-step title="1 设备初始化" description="确保光轴一致性测试相关器件初始化完毕" ></el-step>
+            <el-step title="2 粗调对准" description="通过指示激光将系统光轴与被测设备光轴粗略对准" ></el-step>
+            <el-step title="3 确立基准光轴" description="将系统光轴与所选的基准光轴对齐" ></el-step>
+            <el-step title="4 被测光轴测试" description="选择被测光轴进行一致性测试" ></el-step>
+            <el-step title="5 保存测试结果" description="完成光轴一致性测试，保存测试结果" ></el-step>
+            <el-step title="6 测试完成" description="测试完成，关闭相关器件" ></el-step>
+        </el-steps>
+        </div class="el-button-container">
+            <el-button class="el-button-next" type="primary" @click="nextStep">下一步</el-button>
+            <el-button class="el-button-previous" type="primary" @click="previousStep">上一步</el-button>
+        <div>
+        <keep-alive>
+            <component :is="currentOpticalAxisTestComponent"></component>
+        </keep-alive>
+    </div>
+</div>
+
+

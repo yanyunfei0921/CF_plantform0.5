@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Vue + Element UI</title>
+        <script type="text/javascript" src="/static/jsscripts/jszip.min.js"></script>
+        <script type="text/javascript" src="/static/jsscripts/FileSaver.min.js"></script>
+        <script type="text/javascript" src="/static/jsscripts/vue.js"></script>
+        <script type="text/javascript" src="/static/jsscripts/axios.js"></script>
+        <script type="text/javascript" src="/static/jsscripts/echarts-5.3.1/dist/echarts.js"></script>
+        <script type="text/javascript" src="/static/jsscripts/elementui/lib-master/index.js"></script>
+        <script type="text/javascript" src="/static/jsscripts/jszip.min.js"></script>
+        <script type="text/javascript" src="/static/jsscripts/FileSaver.min.js"></script>
+
+    </head>
+    <body>
+        <div id="app">
+        <p> 顶顶顶{{ message }} </p>
+        </div>
+
+        <script>
+            Vue.use(ELEMENT);
+            new Vue({
+                el: '#app',
+                data() {
+                    return {
+                    activeMenu: '',
+                    message: 'Hello Vue!'
+                    }
+                },
+            });
+        </script>
+    </body>
+</html>

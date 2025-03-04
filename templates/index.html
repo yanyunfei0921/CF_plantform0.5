@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Optical Axis Test System</title>
+        <!-- 添加必要配置 -->
+        <script type="text/javascript" src="/static/libs/jszip.min.js"></script>
+        <script type="text/javascript" src="/static/libs/FileSaver.min.js"></script>
+        <script type="text/javascript" src="/static/libs/vue.js"></script>
+        <script type="text/javascript" src="/static/libs/axios.js"></script>
+        <script type="text/javascript" src="/static/libs/echarts-5.3.1/dist/echarts.js"></script>
+        <script type="text/javascript" src="/static/libs/elementui/lib-master/index.js"></script>
+        <script type="text/javascript" src="/static/libs/jszip.min.js"></script>
+        <script type="text/javascript" src="/static/libs/FileSaver.min.js"></script>
+        <link rel="stylesheet" href="/static/libs/elementui/lib-master/theme-chalk/index.css">
+    </head>
+    <body>
+        <div id="app">
+            <el-container class="el-all-container">
+                <el-header>
+                    Header
+                </el-header>
+                <el-container class="el-main-container">
+                    <el-aside>
+                        <el-menu
+                        default-active="1"
+                        background-color="#D3DCE6"
+                        text-color="#333"
+                        @select="handleSelect">
+                        <el-submenu index="1">
+                            <template slot="title">
+                                <i class="el-icon-folder"></i>
+                                <span>首页</span>
+                            </template>
+                            <el-menu-item index="1-1">使用说明</el-menu-item>
+                            <el-menu-item index="1-2">注意事项</el-menu-item>
+                        </el-submenu>
+                        <el-submenu index="2">
+                            <template slot="title">
+                                <i class="el-icon-folder"></i>
+                                <span>接口配置</span>
+                            </template>
+                            <el-menu-item index="2-1">接口配置</el-menu-item>
+                        </el-submenu>
+                        <el-submenu index="3">
+                            <template slot="title">
+                                <i class="el-icon-folder"></i>
+                                <span>光轴一致性测试</span>
+                            </template>
+                            <el-menu-item index="3-1">选项1</el-menu-item>
+                            <el-menu-item index="3-2">选项2</el-menu-item>
+                        </el-submenu>
+                        <el-submenu index='4'>
+                            <template slot="title">
+                                <i class="el-icon-folder"></i>
+                                <span>动态目标模拟</span>
+                            </template>
+                            <el-menu-item index="4-1">选项1</el-menu-item>
+                            <el-menu-item index="4-2">选项2</el-menu-item>
+                        </el-submenu>
+                        <el-submenu index='5'>
+                            <template slot="title">
+                                <i class="el-icon-folder"></i>
+                                <span>激光模拟测距</span>
+                            </template>
+                            <el-menu-item index="5-1">选项1</el-menu-item>
+                            <el-menu-item index="5-2">选项2</el-menu-item>
+                        </el-submenu>
+                        <el-submenu index='6'>
+                            <template slot="title">
+                                <i class="el-icon-folder"></i>
+                                <span>激光能力测试</span>
+                            </template>
+                            <el-menu-item index="6-1">选项1</el-menu-item>
+                            <el-menu-item index="6-2">选项2</el-menu-item>
+                        </el-submenu>
+                    </el-menu>
+                    </el-aside>
+                    <el-main>
+                        <el-breadcrumb separator="/">
+                            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+                            <el-breadcrumb-item v-if="activeMenu">{{ activeMenu }}</el-breadcrumb-item>
+                        </el-breadcrumb>
+                        <el-divider></el-divider>
+                        <keep-alive>
+                            <component :is="currentComponent"></component>
+                        </keep-alive>
+                    </el-main>
+                </el-container>
+                <el-footer class="el-fixed-footer">
+                    Footer
+                </el-footer>
+            </el-container>
+        </div>
+<!-- 主界面逻辑 -->
+        <script src="/static/js/main.js"></script>
+<!-- 界面样式 -->
+        <style>
+            /* -------------------------------主界面样式-------------------------------- */
+
+            /* 整体容器设置 */
+            .el-all-container {
+            min-height: 100vh; /* 确保容器至少撑满整个视口 */
+            display: flex;
+            flex-direction: column;
+            }
+
+            /* Header 样式 */
+            .el-header {
+            background: #B3C0D1;
+            color: #333;
+            line-height: 60px;
+            height: 60px !important; /* 覆盖 Element 默认高度 */
+            }
+
+            /* 中间区域容器 */
+            .el-main-container {
+            flex: 1; /* 占据剩余空间 */
+            display: flex;
+            min-height: 0; /* 修复 flex 容器溢出问题 */
+            }
+
+            /* 侧边栏 */
+            .el-aside {
+            width: 200px !important; /* 固定侧边栏宽度 */
+            background: #D3DCE6;
+            overflow: auto; /* 内容过多时显示滚动条 */
+            }
+
+            /* 主内容区 */
+            .el-main {
+            flex: 1;
+            padding: 20px;
+            overflow: auto; /* 内容过多时显示滚动条 */
+            background: #fff;
+            }
+
+            /* 底部固定 */
+            .el-fixed-footer {
+            background: #B3C0D1;
+            color: #333;
+            line-height: 60px;
+            height: 60px !important;
+            margin-top: auto; /* 关键：使 Footer 始终停留在底部 */
+            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            body {
+                margin: 0;
+                height: 100%;
+            }
+
+            html {
+                height: 100%;
+            }
+            /* -------------------------------光轴测试界面样式-------------------------------- */
+            .main-content{
+                margin-top: 20px;
+            }
+            .el-button-next{
+                float: right;
+                margin-left: 20px;
+            }
+            .el-button-previous{
+                float: right;
+            }
+
+        </style>
+    </body>
+</html>
