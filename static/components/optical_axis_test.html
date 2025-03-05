@@ -13,6 +13,14 @@
             <el-button class="el-button-previous" type="primary" @click="previousStep">上一步</el-button>
         <div>
         <div v-if="active === 1">
+            
+        </div>
+        <div v-else-if="active === 2">
+            <p>这是第二个判断的内容。</p>
+        </div>
+        <div v-else>
+            <p>这是第三个判断的内容。</p>
+        </div>
     </div>
 </div>
 

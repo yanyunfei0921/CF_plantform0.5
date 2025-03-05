@@ -1,23 +1,27 @@
 <div class="interface_configuration-root">
     <div class="main-content">
-        <template v-for="(serial_setting, serial_name) in serial_settings">
+        <template v-for="serial_name in displayOrder">
             <el-descriptions class="margin-top" :title="serial_name" :column="3" border :key="serial_name">
                 <template slot="extra">
-                    <el-button type="primary" size="small" @click="editSerialSetting(serial_name)">编辑</el-button>
+                    <el-button type="primary" size="small" @click="editSerialSetting(serial_name)" :loading="loading">编辑</el-button>
                 </template>
-                <el-descriptions-item label="串口号">{{ serial_setting.port }}</el-descriptions-item>
-                <el-descriptions-item label="波特率">{{ serial_setting.baudrate }}</el-descriptions-item>
-                <el-descriptions-item label="数据位">{{ serial_setting.databits }}</el-descriptions-item>
-                <el-descriptions-item label="停止位">{{ serial_setting.stopbits }}</el-descriptions-item>
-                <el-descriptions-item label="校验位">{{ serial_setting.parity }}</el-descriptions-item>
-                <el-descriptions-item label="流控制">{{ serial_setting.flowcontrol }}</el-descriptions-item>
-                <el-descriptions-item label="超时时间">{{ serial_setting.timeout }}</el-descriptions-item>
-                <el-descriptions-item label="是否连接">{{ serial_setting.is_connected ? '是' : '否' }}</el-descriptions-item>
+                <el-descriptions-item label="协议">{{ serial_settings[serial_name].protocol }}</el-descriptions-item>
+                <el-descriptions-item label="串口号">{{ serial_settings[serial_name].port }}</el-descriptions-item>
+                <el-descriptions-item label="波特率">{{ serial_settings[serial_name].baudrate }}</el-descriptions-item>
+                <el-descriptions-item label="数据位">{{ serial_settings[serial_name].databits }}</el-descriptions-item>
+                <el-descriptions-item label="停止位">{{ serial_settings[serial_name].stopbits }}</el-descriptions-item>
+                <el-descriptions-item label="校验位">{{ serial_settings[serial_name].parity }}</el-descriptions-item>
+                <el-descriptions-item label="流控制">{{ serial_settings[serial_name].flowcontrol }}</el-descriptions-item>
+                <el-descriptions-item label="超时时间">{{ serial_settings[serial_name].timeout }}</el-descriptions-item>
+                <el-descriptions-item label="是否连接">{{ serial_settings[serial_name].is_connected ? '是' : '否' }}</el-descriptions-item>
             </el-descriptions>
         </template>
     </div>
     <el-dialog :title=current_serial_name+"接口配置" :visible.sync="dialogVisible">
         <el-form :model="form">
+            <el-form-item label="协议" :label-width="formLabelWidth">
+                <el-input v-model="form.protocol" autocomplete="off"></el-input>
+            </el-form-item>
             <el-form-item label="串口号" :label-width="formLabelWidth">
                 <el-input v-model="form.port" autocomplete="off"></el-input>
             </el-form-item>
@@ -42,7 +46,7 @@
         </el-form>
         <div slot="footer" class="dialog-footer">
             <el-button type="primary" @click="dialogVisible = false">取 消</el-button>
-            <el-button type="primary" @click="saveSerialSetting">确 定</el-button>
+            <el-button type="primary" @click="saveSerialSetting" :loading="loading">确 定</el-button>
         </div>
     </el-dialog>
 </div>

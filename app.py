@@ -1,12 +1,18 @@
-from flask import Flask
-from flask import render_template
-from flask import request
-from flask import send_from_directory
+from flask import Flask, render_template, request
+from utils.db import init_db
+from api.serial_settings import serial_settings_bp
 
-app = Flask(__name__,static_folder="static",template_folder="templates")
+app = Flask(__name__, static_folder="static", template_folder="templates")
 
-app.jinja_env.variable_start_string="**DIM LIGHT**"
-app.jinja_env.variable_end_string="**DIM LIGHT**"
+# 设置 Jinja2 模板变量分隔符
+app.jinja_env.variable_start_string = "**DIM LIGHT**"
+app.jinja_env.variable_end_string = "**DIM LIGHT**"
+
+# 注册蓝图
+app.register_blueprint(serial_settings_bp)
+
+# 初始化数据库
+init_db()
 
 @app.route('/')
 def index():
