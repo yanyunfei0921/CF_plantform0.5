@@ -11,6 +11,7 @@
         <script type="text/javascript" src="/static/libs/elementui/lib-master/index.js"></script>
         <script type="text/javascript" src="/static/libs/jszip.min.js"></script>
         <script type="text/javascript" src="/static/libs/FileSaver.min.js"></script>
+        <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
         <link rel="stylesheet" href="/static/libs/elementui/lib-master/theme-chalk/index.css">
     </head>
     <body>
@@ -162,6 +163,28 @@
             }
             .el-button-previous{
                 float: right;
+            }
+            .camera-view {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+            .image-container {
+                width: 100%;
+                height: 300px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #f5f7fa;
+                overflow: hidden;
+            }
+            .image-container img {
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
+            }
+            .no-signal {
+                color: #909399;
+                font-size: 20px;
             }
             /* -------------------------------接口配置界面样式-------------------------------- */
             .margin-top{

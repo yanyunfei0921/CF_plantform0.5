@@ -13,10 +13,43 @@
             <el-button class="el-button-previous" type="primary" @click="previousStep">上一步</el-button>
         <div>
         <div v-if="active === 1">
-            
+
         </div>
         <div v-else-if="active === 2">
-            <p>这是第二个判断的内容。</p>
+            <el-row>
+                <el-col :span="24">
+                    <el-card class="camera-view">
+                        <div slot="header">
+                            <span>吊舱图像</span>
+                            <el-button 
+                                style="float: right; margin-left: 10px" 
+                                :type="isStreaming ? 'danger' : 'success'"
+                                :loading="loading"
+                                @click="toggleStream">
+                                {{ isStreaming ? '停止' : '开始' }}
+                            </el-button>
+                        </div>
+                        <div class="image-container">
+                            <img :src="currentFrame" v-if="currentFrame" />
+                            <div v-else class="no-signal">无信号</div>
+                        </div>
+                    </el-card>
+                </el-col>
+            </el-row>
+            <el-row style="margin-top: 20px;">
+                <el-col :span="24">
+                    <el-card>
+                        <div slot="header">
+                            <span>设备状态</span>
+                        </div>
+                        <el-descriptions border>
+                            <el-descriptions-item label="相机状态">
+                                {{ isStreaming ? '运行中' : '已停止' }}
+                            </el-descriptions-item>
+                        </el-descriptions>
+                    </el-card>
+                </el-col>
+            </el-row>
         </div>
         <div v-else>
             <p>这是第三个判断的内容。</p>
