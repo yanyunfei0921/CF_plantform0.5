@@ -1,0 +1,46 @@
+ <div class="container">
+        <h2>动态目标模拟</h2>
+
+        <div class="section">
+            <button @click="initSystem">系统初始化</button>
+        </div>
+
+        <div class="section">
+            <label>选择目标光谱：</label>
+            <select v-model="selectedSpectrum">
+                <option value="infrared">红外光谱</option>
+                <option value="visible">可见光</option>
+                <option value="laser">激光</option>
+            </select>
+        </div>
+
+        <div class="section">
+            <label>光强度调节：</label>
+            <div class="intensity-container">
+                <input type="range" v-model="intensity" min="0" max="100">
+                <span id="intensityValue">{{ intensity }}</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <label>选择目标靶标：</label>
+            <select v-model="selectedTarget">
+                <option value="target1">靶标1</option>
+                <option value="target2">靶标2</option>
+                <option value="target3">靶标3</option>
+            </select>
+        </div>
+
+        <div class="section">
+            <label>电机运动模式：</label>
+            <select v-model="selectedMotion">
+                <option value="circular">匀速圆周</option>
+                <option value="triangle">三角波</option>
+                <option value="sine">正弦</option>
+            </select>
+        </div>
+
+        <div class="section">
+            <button @click="startSimulation">开始模拟</button>
+        </div>
+</div>
