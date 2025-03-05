@@ -22,9 +22,9 @@ const app = new Vue({
                 '3-2': {title: '光轴一致性测试 / 选项2', component: 'optical_axis_test2'},
                 '4-1': {title: '动态目标模拟 / 选项1', component: 'dynamic_target'},
                 '4-2': {title: '动态目标模拟 / 选项2', component: 'dynamic_target2'},
-                '5-1': {title: '激光模拟测距 / 选项1', component: 'laser_ranging1'},
+                '5-1': {title: '激光模拟测距 / 选项1', component: 'laser_ranging'},
                 '5-2': {title: '激光模拟测距 / 选项2', component: 'laser_ranging2'},
-                '6-1': {title: '激光能力测试 / 选项1', component: 'laser_capability1'},
+                '6-1': {title: '激光能力测试 / 选项1', component: 'laser_capability'},
                 '6-2': {title: '激光能力测试 / 选项2', component: 'laser_capability2'}
             };  
             const menuItem = menuMap[index];

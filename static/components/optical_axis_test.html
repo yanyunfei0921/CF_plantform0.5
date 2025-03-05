@@ -12,9 +12,7 @@
             <el-button class="el-button-next" type="primary" @click="nextStep">下一步</el-button>
             <el-button class="el-button-previous" type="primary" @click="previousStep">上一步</el-button>
         <div>
-        <keep-alive>
-            <component :is="currentOpticalAxisTestComponent"></component>
-        </keep-alive>
+        <div v-if="active === 1">
     </div>
 </div>
 
