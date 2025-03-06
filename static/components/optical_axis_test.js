@@ -12,64 +12,95 @@ if(!Vue.options.components['optical_axis_test']){
                 cameraSettings: {        // 相机设置
                     port: 'COM1',
                     baudrate: 9600
-                }
+                },
+                connectedDevices: []
             }
         },
         methods: {
-            initSocket() {
-                if(this.socket) {
-                    console.log("断开现有连接");
-                    this.socket.disconnect();
-                }
-                
-                console.log('开始初始化Socket连接');
-                this.socket = io('http://localhost:5000/camera', {
-                    transports: ['websocket']
-                });
-
-                this.socket.on('connect', () => {
-                    console.log("WebSocket连接成功, 前端 socket.id:", this.socket.id);
-                    // 发送测试消息
-                    this.socket.emit('test_connection', { 
-                        client_id: this.socket.id,
-                        timestamp: Date.now()
+            connectSocket(){
+                return new Promise((resolve, reject) => {
+                    if(this.socket){
+                        this.socket.disconnectSocket();
+                    }
+                    console.log('建立WebSocket连接。。。');
+                    this.socket = io('http://localhost:5000/camera', {
+                        transports: ['websocket'],
+                        query: {device_id: this.cameraSettings.device_id},
+                        upgrade: false
                     });
-                });
-
-                this.socket.on('test_response', (data) => {
-                    console.log("收到测试响应:", data);
-                    console.log("服务器的 SID:", data.server_sid);
-                    console.log("当前前端 socket.id:", this.socket.id);
-                });
-
-                this.socket.on('image_frame', (data) => {
-                    console.log("收到图像数据, 来自服务器 SID:", data.server_sid);
-                    console.log("当前前端 socket.id:", this.socket.id);
-                    // ... 处理图像 ...
+                    this.socket.on('connect', () => {
+                        console.log('WebSocket连接成功');
+                        this.setupSocketEvents();
+                        resolve();
+                    });
+                    this.socket.on('connect_error', (error) => {
+                        console.error('WebSocket连接失败', error);
+                        reject(error);
+                    });
+                    setTimeout(()=>{
+                        reject(new Error('连接超时'));
+                    }, 5000);
                 });
             },
-            
-            async toggleStream() {
+            disconnectSocket(){
+                if(this.socket){
+                    console.log('断开WebSocket连接。。。');
+                    this.socket.off('image_frame');
+                    //this.socket.off('disconnect');
+                    this.socket.disconnect();
+                    this.socket = null;
+                    this.currentFrame = '';
+                }
+            },
+            setupSocketEvents(){
+                console.log('setupevents');
+                this.socket.on('image_frame', (data) => {
+                    console.log('接收到的图像帧,大小：', data.data.length);
+                    this.currentFrame = 'data:image/jpeg;base64,' + data.data;
+                });
+                this.socket.on('disconnect', () => {
+                    console.log('WebSocket连接断开');
+                    if(this.isStreaming){
+                        this.$message.warning('相机连接已断开，正在重连。。');
+                        this.isStreaming = false;
+                        this.toggleStream();
+                    }
+                });
+            },
+            async toggleStream(){
                 this.loading = true;
-                try {
+                try{
+
+                    
                     const url = this.isStreaming ? '/api/stop_stream' : '/api/start_stream';
                     const response = await axios.post(url, {
-                        device_id: 'camera',
+                        device_id: 'default',
                         port: this.cameraSettings.port,
                         baudrate: this.cameraSettings.baudrate,
-                        mock: true  // 设置为true使用模拟模式，false使用实际串口
+                        mock: true
                     });
-
-                    if (response.data.status === 'success') {
+                    if(response.data.status == 'start'){
+                        await this.connectSocket();
                         this.isStreaming = !this.isStreaming;
-                        this.$message.success(response.data.message);
+                        this.$message.success('开启相机！');
                     }
-                } catch (error) {
+                    else if(response.data.status == 'stop'){
+                        this.isStreaming = !this.isStreaming;
+                        await this.disconnectSocket();
+                        this.$message.success('关闭相机！');
+                    }
+                }
+                catch(error){
                     this.$message.error(error.response?.data?.message || '操作失败');
-                } finally {
+
+                }
+                finally{
                     this.loading = false;
                 }
+
+
             },
+
             
             nextStep() {
                 if(this.active < 6){
@@ -98,12 +129,6 @@ if(!Vue.options.components['optical_axis_test']){
         mounted() {
             //
         },
-        beforeDestroy() {
-            this.stopStream();
-            if (this.socket) {
-                this.socket.disconnect();
-            }
-        },
         watch: {
             active: {
                 handler(newVal) {
@@ -111,10 +136,8 @@ if(!Vue.options.components['optical_axis_test']){
                     if(newVal == 1){
 
                     }
-                    else if(newVal == 2 && !this.socket){
-                        console.log('initSocket');
+                    else if(newVal == 2){
 
-                        this.initSocket();
                     }
                 }
             }

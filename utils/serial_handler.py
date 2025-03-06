@@ -9,7 +9,7 @@ import logging
 from threading import Thread, Event
 
 class CameraStreamHandler:
-    def __init__(self, port=None, baudrate=None, device_id='camera'):
+    def __init__(self, port=None, baudrate=None, device_id='camera', app=None):
         self.port = port
         self.baudrate = baudrate
         self.device_id = device_id
@@ -17,7 +17,7 @@ class CameraStreamHandler:
         self._stop_event = threading.Event()
         self.serial = None
         self.callback = None
-        
+        self.app = app
     def start(self, callback, mock=False):
         """
         启动相机流
@@ -95,7 +95,11 @@ class CameraStreamHandler:
                     img.save(buffered, format="JPEG")
                     img_bytes = buffered.getvalue()  # 获取字节数据
                     # 调用回调，传入字节数据
-                    callback(img_bytes, self.device_id)  # 直接传递字节数据
+                    if self.app:
+                        with self.app.app_context():
+                            callback(img_bytes, self.device_id)  # 直接传递字节数据
+                    else:
+                        callback(img_bytes, self.device_id)  # 直接传递字节数据
                     # 控制帧率
                     time.sleep(0.1)
         except Exception as e:
