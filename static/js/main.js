@@ -1,3 +1,95 @@
+window.DeviceManager = {
+    // 默认串口设置，当数据库中没有数据时使用
+    serial_settings:{
+        'light_source':{
+            protocol:'RS232',
+            port:'COM1',
+            baudrate:'9600',
+            databits:'8',
+            stopbits:'1',
+            parity:'none',
+            flowcontrol:'none',
+            timeout:'1000',
+            is_connected: false
+        },
+        'ccd_camera_sys':{
+            protocol:'RS232',
+            port:'COM2',
+            baudrate:'9600',
+            databits:'8',
+            stopbits:'1',
+            parity:'none',
+            flowcontrol:'none',
+            timeout:'1000',
+            is_connected: false
+        },
+        'ccd_camera_pod':{
+            protocol:'RS232',
+            port:'COM3',
+            baudrate:'9600',
+            databits:'8',
+            stopbits:'1',
+            parity:'none',
+            flowcontrol:'none',
+            timeout:'1000',
+            is_connected: false
+        },
+        'delay_module':{
+            protocol:'RS232',
+            port:'COM3',
+            baudrate:'9600',
+            databits:'8',
+            parity:'none',
+            flowcontrol:'none',
+            timeout:'1000',
+            is_connected: false
+        },
+        'motor1':{
+            protocol:'RS232',
+            port:'COM4',
+            baudrate:'9600',
+            databits:'8',
+            stopbits:'1',
+            parity:'none',
+            flowcontrol:'none',
+            timeout:'1000',
+            is_connected: false
+        },
+        'motor2':{
+            protocol:'RS232',
+            port:'COM5',
+            baudrate:'9600',
+            databits:'8',
+            stopbits:'1',
+            parity:'none',
+            flowcontrol:'none',
+            timeout:'1000',
+            is_connected: false
+        },
+        'motor3':{
+            protocol:'RS232',
+            port:'COM6',
+            baudrate:'9600',
+            databits:'8',
+            stopbits:'1',
+            parity:'none',
+            flowcontrol:'none',
+            timeout:'1000',
+            is_connected: false
+        }
+    },
+    //前端显示顺序，为避免因json文件转换而导致的乱序
+    displayOrder:[
+        'light_source',
+        'ccd_camera_sys',
+        'ccd_camera_pod',
+        'delay_module',
+        'motor1',
+        'motor2',
+        'motor3'
+    ]
+}
+
 const app = new Vue({
     el: '#app',
     data() {
@@ -5,7 +97,85 @@ const app = new Vue({
             activeMenu: '',
             message: 'Hello Vue!',
             currentComponent: null,
-            loadedComponents: {}
+            loadedComponents: {},
+            serial_settings:{
+                'light_source':{
+                    protocol:'RS232',
+                    port:'COM1',
+                    baudrate:'9600',
+                    databits:'8',
+                    stopbits:'1',
+                    parity:'none',
+                    flowcontrol:'none',
+                    timeout:'1000',
+                    is_connected: false
+                },
+                'ccd_camera_sys':{
+                    protocol:'RS232',
+                    port:'COM2',
+                    baudrate:'9600',
+                    databits:'8',
+                    stopbits:'1',
+                    parity:'none',
+                    flowcontrol:'none',
+                    timeout:'1000',
+                    is_connected: false
+                },
+                'ccd_camera_pod':{
+                    protocol:'RS232',
+                    port:'COM3',
+                    baudrate:'9600',
+                    databits:'8',
+                    stopbits:'1',
+                    parity:'none',
+                    flowcontrol:'none',
+                    timeout:'1000',
+                    is_connected: false
+                },
+                'delay_module':{
+                    protocol:'RS232',
+                    port:'COM3',
+                    baudrate:'9600',
+                    databits:'8',
+                    parity:'none',
+                    flowcontrol:'none',
+                    timeout:'1000',
+                    is_connected: false
+                },
+                'motor1':{
+                    protocol:'RS232',
+                    port:'COM4',
+                    baudrate:'9600',
+                    databits:'8',
+                    stopbits:'1',
+                    parity:'none',
+                    flowcontrol:'none',
+                    timeout:'1000',
+                    is_connected: false
+                },
+                'motor2':{
+                    protocol:'RS232',
+                    port:'COM5',
+                    baudrate:'9600',
+                    databits:'8',
+                    stopbits:'1',
+                    parity:'none',
+                    flowcontrol:'none',
+                    timeout:'1000',
+                    is_connected: false
+                },
+                'motor3':{
+                    protocol:'RS232',
+                    port:'COM6',
+                    baudrate:'9600',
+                    databits:'8',
+                    stopbits:'1',
+                    parity:'none',
+                    flowcontrol:'none',
+                    timeout:'1000',
+                    is_connected: false
+                }
+            }
         }
     },
     mounted() {
