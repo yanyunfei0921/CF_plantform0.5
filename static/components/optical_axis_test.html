@@ -12,12 +12,15 @@
             <el-button class="el-button-next" type="primary" @click="nextStep">下一步</el-button>
             <el-button class="el-button-previous" type="primary" @click="previousStep">上一步</el-button>
         <div>
+    </div>
+    
+    <div class="step-content">
         <div v-if="active === 1">
 
         </div>
         <div v-else-if="active === 2">
             <el-row>
-                <el-col :span="24">
+                <el-col :span="16">
                     <el-card class="camera-view">
                         <div slot="header">
                             <span>吊舱图像</span>
@@ -25,8 +28,8 @@
                                 style="float: right; margin-left: 10px" 
                                 :type="isStreaming ? 'danger' : 'success'"
                                 :loading="loading"
-                                @click="toggleStream">
-                                {{ isStreaming ? '停止' : '开始' }}
+                                @click="sendTestImage">
+                                开始
                             </el-button>
                         </div>
                         <div class="image-container">
@@ -35,16 +38,14 @@
                         </div>
                     </el-card>
                 </el-col>
-            </el-row>
-            <el-row style="margin-top: 20px;">
-                <el-col :span="24">
+                <el-col :span="8">
                     <el-card>
                         <div slot="header">
                             <span>设备状态</span>
                         </div>
                         <el-descriptions border>
                             <el-descriptions-item label="相机状态">
-                                {{ isStreaming ? '运行中' : '已停止' }}
+                                {{ serial_settings.ccd_camera_pod.is_connected ? '已连接' : '未连接' }}
                             </el-descriptions-item>
                         </el-descriptions>
                     </el-card>

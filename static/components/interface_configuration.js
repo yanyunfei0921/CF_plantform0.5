@@ -7,7 +7,8 @@ if(!Vue.options.components['interface_configuration']){
                     //前端显示顺序，为避免因json文件转换而导致的乱序
                     displayOrder:[
                         'light_source',
-                        'ccd_camera',
+                        'ccd_camera_sys',
+                        'ccd_camera_pod',
                         'delay_module',
                         'motor1',
                         'motor2',
@@ -25,9 +26,20 @@ if(!Vue.options.components['interface_configuration']){
                             timeout:'1000',
                             is_connected: false
                         },
-                        'ccd_camera':{
+                        'ccd_camera_sys':{
                             protocol:'RS232',
                             port:'COM2',
+                            baudrate:'9600',
+                            databits:'8',
+                            stopbits:'1',
+                            parity:'none',
+                            flowcontrol:'none',
+                            timeout:'1000',
+                            is_connected: false
+                        },
+                        'ccd_camera_pod':{
+                            protocol:'RS232',
+                            port:'COM3',
                             baudrate:'9600',
                             databits:'8',
                             stopbits:'1',
@@ -41,7 +53,6 @@ if(!Vue.options.components['interface_configuration']){
                             port:'COM3',
                             baudrate:'9600',
                             databits:'8',
-                            stopbits:'1',
                             parity:'none',
                             flowcontrol:'none',
                             timeout:'1000',

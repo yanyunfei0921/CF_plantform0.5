@@ -9,68 +9,10 @@ if(!Vue.options.components['optical_axis_test']){
                 currentFrame: '',        // 简化为单个frame
                 isStreaming: false,      // 简化为单个状态
                 loading: false,          // 简化为单个loading状态
-                cameraSettings: {        // 相机设置
-                    port: 'COM1',
-                    baudrate: 9600
-                }
+                serial_settings: ''
             }
         },
         methods: {
-            initSocket() {
-                if(this.socket) {
-                    console.log("断开现有连接");
-                    this.socket.disconnect();
-                }
-                
-                console.log('开始初始化Socket连接');
-                this.socket = io('http://localhost:5000/camera', {
-                    transports: ['websocket']
-                });
-
-                this.socket.on('connect', () => {
-                    console.log("WebSocket连接成功, 前端 socket.id:", this.socket.id);
-                    // 发送测试消息
-                    this.socket.emit('test_connection', { 
-                        client_id: this.socket.id,
-                        timestamp: Date.now()
-                    });
-                });
-
-                this.socket.on('test_response', (data) => {
-                    console.log("收到测试响应:", data);
-                    console.log("服务器的 SID:", data.server_sid);
-                    console.log("当前前端 socket.id:", this.socket.id);
-                });
-
-                this.socket.on('image_frame', (data) => {
-                    console.log("收到图像数据, 来自服务器 SID:", data.server_sid);
-                    console.log("当前前端 socket.id:", this.socket.id);
-                    // ... 处理图像 ...
-                });
-            },
-            
-            async toggleStream() {
-                this.loading = true;
-                try {
-                    const url = this.isStreaming ? '/api/stop_stream' : '/api/start_stream';
-                    const response = await axios.post(url, {
-                        device_id: 'camera',
-                        port: this.cameraSettings.port,
-                        baudrate: this.cameraSettings.baudrate,
-                        mock: true  // 设置为true使用模拟模式，false使用实际串口
-                    });
-
-                    if (response.data.status === 'success') {
-                        this.isStreaming = !this.isStreaming;
-                        this.$message.success(response.data.message);
-                    }
-                } catch (error) {
-                    this.$message.error(error.response?.data?.message || '操作失败');
-                } finally {
-                    this.loading = false;
-                }
-            },
-            
             nextStep() {
                 if(this.active < 6){
                     this.active++;
@@ -84,37 +26,84 @@ if(!Vue.options.components['optical_axis_test']){
                     this.$message.success('光轴一致性测试已完成');
                 } else if(this.active > 1){
                     this.active--;
+                    console.log(this.active);
                 } else {
                     this.$message.warning('已经是第一步了');
                 }
             },
-            
-            stopStream() {
-                if (this.isStreaming) {
-                    this.toggleStream();
+
+            initSocket() {
+                if(this.socket) {
+                    this.socket.disconnect();
                 }
+                
+                console.log('初始化Socket连接');
+                this.socket = io('http://localhost:5000/camera', {
+                    transports: ['websocket']
+                });
+
+                this.socket.on('connect', () => {
+                    console.log("WebSocket连接成功");
+                });
+
+                this.socket.on('image_frame', (data) => {
+                    console.log("收到图像数据");
+                    if (data && data.data) {
+                        this.currentFrame = `data:image/jpeg;base64,${data.data}`;
+                    }
+                });
+            },
+            
+            async sendTestImage() {
+                try {
+                    if (!this.socket) {
+                        await new Promise((resolve, reject) => {
+                            this.initSocket();
+                        
+                        // 当WebSocket连接成功时，调用resolve()
+                        this.socket.on('connect', () => {
+                            console.log("WebSocket连接成功");
+                            resolve();  // 这里告诉await可以继续往下执行了
+                            });
+                        
+                        // 如果5秒后还没连接成功，就报错
+                        setTimeout(() => {
+                            reject(new Error('连接超时'));
+                            }, 5000);
+                        });
+                    }
+                    
+                    // 只有在上面的Promise resolve后，才会执行到这里
+                    const response = await axios.post('/api/send_test_image');
+                    if (response.data.status === 'success') {
+                        this.$message.success('接收相机图像成功');
+                    }
+
+                } catch (error) {
+                    this.$message.error('接收相机图像失败');
+                    }
+            }
+        },
+        beforeDestroy() {
+            if (this.socket) {
+                this.socket.disconnect();
             }
         },
         mounted() {
             //
         },
-        beforeDestroy() {
-            this.stopStream();
-            if (this.socket) {
-                this.socket.disconnect();
-            }
-        },
         watch: {
             active: {
-                handler(newVal) {
-                    console.log(newVal);
-                    if(newVal == 1){
-
-                    }
-                    else if(newVal == 2 && !this.socket){
-                        console.log('initSocket');
-
-                        this.initSocket();
+                handler(newVal,oldVal) {
+                    //console.log(newVal);
+                    //console.log(oldVal);
+                    if(oldVal == 2){
+                        if(this.socket){
+                            console.log('断开WebSocket连接');
+                            this.socket.disconnect();
+                            this.socket = null;
+                            this.currentFrame = '';
+                        }
                     }
                 }
             }
