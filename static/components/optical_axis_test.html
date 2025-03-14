@@ -15,45 +15,499 @@
     </div>
     
     <div class="step-content">
-        <div v-if="active === 1">
-
+        <div v-if="active === 1" class="welcome-container">
+            <el-card class="welcome-card">
+                <div slot="header" class="welcome-header">
+                    <i class="el-icon-info"></i>
+                    <span>光轴一致性测试</span>
+                </div>
+                <div class="welcome-content">
+                    <h2>测试前请确认：</h2>
+                    <ul class="check-list">
+                        <li><i class="el-icon-check"></i> 复合光源已连接</li>
+                        <li><i class="el-icon-check"></i> 系统CCD相机已连接</li>
+                        <li><i class="el-icon-check"></i> 吊舱CCD相机已连接</li>
+                        <li><i class="el-icon-check"></i> 靶轮电机已连接</li>
+                        <li><i class="el-icon-check"></i> 注意激光安全</li>
+                    </ul>
+                    <div class="divider"></div>
+                    <h3 class="note">点击"下一步"开始光轴一致性测试流程</h3>
+                </div>
+            </el-card>
         </div>
         <div v-else-if="active === 2">
-            <el-row>
-                <el-col :span="16">
-                    <el-card class="camera-view">
+            <div class="cards-container">
+                <!-- 第一列：上下两个卡片 -->
+                <div class="column-container">
+                    <!-- 上方卡片 -->
+                    <el-card class="equal-height-card half-height-card">
+                        <div slot="header">
+                            <span>指示激光器控制</span>
+                        </div>
+                        <div>
+                            <!-- 这里放指示激光器控制的内容 -->
+                            <div>
+                                <div style="text-align: center; margin-bottom: 20px;">
+                                    <el-button 
+                                        type="primary"
+                                        @click="controlCompositeDevice('indicationLaser')"
+                                        :type="indicationLaser.isLaserOn ? 'danger' : 'success'">
+                                        {{ indicationLaser.isLaserOn ? '关闭指示激光' : '开启指示激光' }}
+                                    </el-button>
+                                </div>
+                                <div style="padding: 0 20px;">
+                                    <div class="power-control-container">
+                                        <div class="power-title">指示激光功率调节</div>
+                                        <div class="power-control">
+                                            <el-slider
+                                                v-model="indicationLaser.laserPower"
+                                                :min="0"
+                                                :max="1000"
+                                                :disabled="!indicationLaser.isLaserOn"
+                                                @change="(val) => controlCompositeDevice('indicationLaser', val)"
+                                                :format-tooltip="(val) => formatCompositeDeviceTooltip('indicationLaser', val)">
+                                            </el-slider>
+                                            <el-input-number
+                                                v-model="indicationLaser.laserPower"
+                                                :min="0"
+                                                :max="1000"
+                                                :disabled="!indicationLaser.isLaserOn"
+                                                @change="(val) => controlCompositeDevice('indicationLaser', val)"
+                                                size="small"
+                                                style="width: 100px; margin-left: 20px;">
+                                            </el-input-number>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </el-card>
+                    
+                    <!-- 下方卡片 -->
+                    <el-card class="equal-height-card half-height-card">
+                        <div slot="header">
+                            <span>光斑质心识别算法</span>
+                        </div>
+                        <el-radio-group v-model="cameras.pod.centroidData.algorithm" size="large" class="algorithm-radio-group" @change="(val) => onAlgorithmChange('pod', val)">
+                            <el-row>
+                                <el-radio border label="weighted">加权质心法</el-radio>
+                            </el-row>
+                            <el-row>
+                                <el-radio border label="gray">灰度质心法</el-radio>
+                            </el-row>
+                            <el-row>
+                                <el-radio border label="gaussian">高斯拟合法</el-radio>
+                            </el-row>
+                            <el-row>
+                                <el-radio border label="contour">椭圆拟合法</el-radio>
+                            </el-row>
+                        </el-radio-group> 
+                        <!-- 算法说明 -->
+                        <div class="algorithm-description" v-if="cameras.pod.centroidData.algorithm">
+                            <el-alert
+                                :title="algorithmDescriptions[cameras.pod.centroidData.algorithm].title"
+                                :description="algorithmDescriptions[cameras.pod.centroidData.algorithm].description"
+                                type="info"
+                                show-icon>
+                            </el-alert>
+                        </div>
+                    </el-card>
+                </div>
+                
+                <!-- 第二个卡片（中间） -->
+                <el-card class="equal-height-card">
+                    <div slot="header">
+                        <span>吊舱图像</span>
+                        <!-- 开始显示视频按钮 -->
+                        <el-button 
+                            style="float: right; margin-left: 10px" 
+                            :type="cameras.pod.isStreaming ? 'danger' : 'success'"
+                            :loading="loading"
+                            @click="toggleCameraImage('pod')">
+                            {{ cameras.pod.isStreaming ? '停止' : '开始' }}
+                        </el-button>
+                        <!-- 中心十字线开关 -->
+                        <el-switch
+                            style="float: right; margin-top: 8px; margin-right: 15px;"
+                            v-model="cameras.pod.drawSettings.drawCrosshair"
+                            active-text="显示中心十字"
+                            inactive-text="隐藏中心十字"
+                            @change="(val) => toggleCrosshairDisplay('pod', val)">
+                        </el-switch>
+                        <!-- 质心绘制开关 -->
+                        <el-switch
+                            style="float: right; margin-top: 8px; margin-right: 15px;"
+                            v-model="cameras.pod.drawSettings.drawCentroid"
+                            active-text="启用质心绘制"
+                            inactive-text="关闭质心绘制"
+                            @change="(val) => toggleCentroidDisplay('pod', val)">
+                        </el-switch>
+                    </div>
+                    <div class="image-container">
+                        <img :src="cameras.pod.currentFrame" v-if="cameras.pod.currentFrame" alt="Video Stream"/>
+                        <div v-else class="no-signal">无信号</div>
+                    </div>
+
+                    <div class="centroid-results" v-if="cameras.pod.centroidData.algorithm">
+                        <el-card class="box-card" style="text-align: center;">
+                            <div class="centroid-table">
+                                <el-row :gutter="20">
+                                    <el-col :span="6">检测算法：{{ algorithmDescriptions[cameras.pod.centroidData.algorithm].title || '未检测' }}</el-col>
+                                    <el-col :span="6">光斑半径：{{ cameras.pod.centroidData.success ? parseFloat(cameras.pod.centroidData.radius).toFixed(3) + ' px' : '未检测' }}</el-col>
+                                    <el-col :span="6">质心X坐标：{{ cameras.pod.centroidData.success ? parseFloat(cameras.pod.centroidData.x).toFixed(3) + ' px' : '未检测' }}</el-col>
+                                    <el-col :span="6">质心Y坐标：{{ cameras.pod.centroidData.success ? parseFloat(cameras.pod.centroidData.y).toFixed(3) + ' px' : '未检测' }}</el-col>
+                                </el-row>
+                                <el-row :gutter="20">
+                                    <el-col :span="6">图像宽度：{{ cameras.pod.imageInfo.width || '未检测' }}</el-col>
+                                    <el-col :span="6">图像高度：{{ cameras.pod.imageInfo.height || '未检测' }}</el-col>
+                                    <el-col :span="6">
+                                        <div :class="{
+                                            'negative-diff': cameras.pod.centroidData.success && Math.abs(getCameraXDifference('pod')) < 1,
+                                            'positive-diff': cameras.pod.centroidData.success && Math.abs(getCameraXDifference('pod')) >= 1
+                                        }">
+                                            质心X偏差：{{ cameras.pod.centroidData.success ? parseFloat(getCameraXDifference('pod')).toFixed(3) + ' px' : '未检测' }}
+                                        </div>
+                                    </el-col>
+                                    <el-col :span="6">
+                                        <div :class="{
+                                            'negative-diff': cameras.pod.centroidData.success && Math.abs(getCameraYDifference('pod')) < 1,
+                                            'positive-diff': cameras.pod.centroidData.success && Math.abs(getCameraYDifference('pod')) >= 1
+                                        }">
+                                            质心Y偏差：{{ cameras.pod.centroidData.success ? parseFloat(getCameraYDifference('pod')).toFixed(3) + ' px' : '未检测' }}
+                                        </div>
+                                    </el-col>
+                                </el-row>
+                            </div>
+                        </el-card>
+                    </div>
+                    <div>
+                        <h3 style="text-align: center;">粗调对准阶段，请将指示激光光斑中心位置尽可能的对准吊舱相机的中心位置</h3>
+                    </div>
+                </el-card>
+                
+                <!-- 第三个卡片（右侧） -->
+                <el-card class="equal-height-card">
+                    <div slot="header">
+                        <span>粗调说明</span>
+                    </div>
+                    <div>
+                        <h4>操作步骤：</h4>
+                        <ol>
+                            <li>点击"开始"按钮，启动吊舱相机图像显示</li>
+                            <li>点击"开启指示激光"按钮，打开指示激光</li>
+                            <li>调整激光功率至合适水平（避免过亮或过暗）</li>
+                            <li>观察光斑位置，调整吊舱位置使光斑中心与相机中心对齐</li>
+                            <li>确认质心偏差数据，X偏差和Y偏差应尽量接近0</li>
+                            <li>调整完成后，点击"下一步"继续测试流程</li>
+                        </ol>
+                        <div class="tips">
+                            <p><strong>提示：</strong>蓝色数值表示偏差较小（&lt;1像素），红色数值表示偏差较大（≥1像素）</p>
+                            <p>粗调阶段只需确保光斑大致位于中心位置，精确对准将在后续步骤进行</p>
+                        </div>
+                    </div>
+                </el-card>
+            </div>
+        </div>
+        <div v-else-if="active === 3">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <el-radio-group v-model="referenceAxis.spectrum" size="large">
+                    <el-radio-button label="ir">红外</el-radio-button>
+                    <el-radio-button label="visible">可见光</el-radio-button>
+                    <el-radio-button label="laser">激光</el-radio-button>
+                </el-radio-group>
+                <el-radio-group v-model="referenceAxis.type" size="large">
+                    <el-radio-button label="transmit">发射光轴</el-radio-button>
+                    <el-radio-button label="receive">接收光轴</el-radio-button>
+                </el-radio-group>
+            </div>
+
+            <!-- 根据选择显示不同内容 -->
+            <div v-if="referenceAxis.type === 'receive'">
+                <div class="cards-container">
+                    <!-- 第一列：上下两个卡片 -->
+                    <div class="column-container">
+                        <!-- 光源控制 -->
+                        <div v-if="referenceAxis.spectrum === 'ir'">
+                            <el-card class="equal-height-card">
+                                <div slot="header">
+                                    <span>红外黑体控制</span>
+                                </div>
+                                <div>
+                                    <!-- 黑体控制的内容 -->
+                                    <div>
+                                        <div style="text-align: center; margin-bottom: 20px;">
+                                            <el-button 
+                                                type="primary" 
+                                                @click="controlCompositeDevice('infraredBlackBody')"
+                                                :type="infraredBlackBody.isInfraredBlackBodyOn ? 'danger' : 'success'">
+                                                {{ infraredBlackBody.isInfraredBlackBodyOn ? '关闭红外黑体' : '开启红外黑体' }}
+                                            </el-button>
+                                        </div>
+                                        <div style="padding: 0 20px;">
+                                            <div class="power-control-container">
+                                                <div class="power-title">黑体温度调节</div>
+                                                <div class="power-control">
+                                                    <el-slider
+                                                        v-model="infraredBlackBody.temperature"
+                                                        :min="0"
+                                                        :max="40000"
+                                                        :disabled="!infraredBlackBody.isInfraredBlackBodyOn"
+                                                        @change="(val) => controlCompositeDevice('infraredBlackBody', val)"
+                                                        :format-tooltip="(val) => formatCompositeDeviceTooltip('infraredBlackBody', val)">
+                                                    </el-slider>
+                                                    <el-input-number
+                                                        v-model="infraredBlackBody.temperature"
+                                                        :min="0"
+                                                        :max="40000"
+                                                        :disabled="!infraredBlackBody.isInfraredBlackBodyOn"
+                                                        @change="(val) => controlCompositeDevice('infraredBlackBody', val)"
+                                                        size="small"
+                                                        style="width: 120px; margin-left: 20px;">
+                                                    </el-input-number>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </el-card>
+                        </div>
+                        <div v-if="referenceAxis.spectrum === 'visible'">
+                            <el-card class="equal-height-card">
+                                <div slot="header">
+                                    <span>可见光光源控制</span>
+                                </div>
+                                <div>
+                                    <!-- 可见光控制的内容 -->
+                                    <div>
+                                        <div style="text-align: center; margin-bottom: 20px;">
+                                            <el-button 
+                                                type="primary" 
+                                                @click="controlCompositeDevice('visibleLight')"
+                                                :type="visibleLight.isVisibleLightOn ? 'danger' : 'success'">
+                                                {{ visibleLight.isVisibleLightOn ? '关闭可见光源' : '开启可见光源' }}
+                                            </el-button>
+                                        </div>
+                                        <div style="padding: 0 20px;">
+                                            <div class="power-control-container">
+                                                <div class="power-title">可见光亮度调节</div>
+                                                <div class="power-control">
+                                                    <el-slider
+                                                        v-model="visibleLight.visibleLightPower"
+                                                        :min="0"
+                                                        :max="500"
+                                                        :disabled="!visibleLight.isVisibleLightOn"
+                                                        @change="(val) => controlCompositeDevice('visibleLight', val)"
+                                                        :format-tooltip="(val) => formatCompositeDeviceTooltip('visibleLight', val)">
+                                                    </el-slider>
+                                                    <el-input-number
+                                                        v-model="visibleLight.visibleLightPower"
+                                                        :min="0"
+                                                        :max="500"
+                                                        :disabled="!visibleLight.isVisibleLightOn"
+                                                        @change="(val) => controlCompositeDevice('visibleLight', val)"
+                                                        size="small"
+                                                        style="width: 120px; margin-left: 20px;">
+                                                    </el-input-number>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </el-card>
+                        </div>
+                        <div v-if="referenceAxis.spectrum === 'laser'">
+                            <!-- 暂无，这个激光器得单独一个 -->>
+                        </div>
+
+                        <!-- 靶标选择 -->
+                        <el-card class="equal-height-card">
+                            <div slot="header">
+                                <span>靶标选择</span>
+                            </div>
+                            <div>
+                                <el-radio-group v-model="target" class="target-radio-group">
+                                    <el-row :gutter="20">
+                                        <!-- 第一行 -->
+                                        <el-col :span="12">
+                                            <div class="target-option">
+                                                <div class="target-image">
+                                                    <img src="/static/img/targets/cross.png" alt="十字靶标">
+                                                </div>
+                                                <el-radio label="cross">十字靶标</el-radio>
+                                            </div>
+                                        </el-col>
+                                        <el-col :span="12">
+                                            <div class="target-option">
+                                                <div class="target-image">
+                                                    <img src="/static/img/targets/star.png" alt="星形靶标">
+                                                </div>
+                                                <el-radio label="star">星形靶标</el-radio>
+                                            </div>
+                                        </el-col>
+                                    </el-row>
+                                    <el-row :gutter="20" style="margin-top: 20px;">
+                                        <!-- 第二行 -->
+                                        <el-col :span="12">
+                                            <div class="target-option">
+                                                <div class="target-image">
+                                                    <img src="/static/img/targets/four.png" alt="四点靶标">
+                                                </div>
+                                                <el-radio label="four">四点靶标</el-radio>
+                                            </div>
+                                        </el-col>
+                                        <el-col :span="12">
+                                            <div class="target-option">
+                                                <div class="target-image">
+                                                    <img src="/static/img/targets/usaf.png" alt="USAF靶标">
+                                                </div>
+                                                <el-radio label="usaf">USAF靶标</el-radio>
+                                            </div>
+                                        </el-col>
+                                    </el-row>
+                                </el-radio-group>
+                            </div>
+                        </el-card>   
+                    </div>
+                    
+                    <!-- 第二个卡片（中间） -->
+                    <el-card class="equal-height-card">
                         <div slot="header">
                             <span>吊舱图像</span>
+                            <!-- 开始显示视频按钮 -->
                             <el-button 
                                 style="float: right; margin-left: 10px" 
-                                :type="isStreaming ? 'danger' : 'success'"
+                                :type="cameras.pod.isStreaming ? 'danger' : 'success'"
                                 :loading="loading"
-                                @click="sendTestImage">
-                                开始
+                                @click="toggleCameraImage('pod')">
+                                {{ cameras.pod.isStreaming ? '停止' : '开始' }}
                             </el-button>
+                            <!-- 中心十字线开关 -->
+                            <el-switch
+                                style="float: right; margin-top: 8px; margin-right: 15px;"
+                                v-model="cameras.pod.drawSettings.drawCrosshair"
+                                active-text="显示中心十字"
+                                inactive-text="隐藏中心十字"
+                                @change="(val) => toggleCrosshairDisplay('pod', val)">
+                            </el-switch>
+                            <!-- 质心绘制开关 -->
+                            <el-switch
+                                style="float: right; margin-top: 8px; margin-right: 15px;"
+                                v-model="cameras.pod.drawSettings.drawCentroid"
+                                active-text="启用质心绘制"
+                                inactive-text="关闭质心绘制"
+                                @change="(val) => toggleCentroidDisplay('pod', val)">
+                            </el-switch>
                         </div>
-                        <div class="image-container">
-                            <img :src="currentFrame" v-if="currentFrame" alt="Video Stream"/>
-                            <div v-else class="no-signal">无信号</div>
+                        <div>
+                            <!-- 吊舱图像显示 -->
+                            <div class="image-container">
+                                <img :src="cameras.pod.currentFrame" v-if="cameras.pod.currentFrame" alt="Video Stream"/>
+                                <div v-else class="no-signal">无信号</div>
+                            </div>
+                        
+                            <div class="centroid-results" v-if="cameras.pod.centroidData.algorithm">
+                                <el-card class="box-card" style="text-align: center;">
+                                    <div class="centroid-table">
+                                        <el-row :gutter="20">
+                                            <el-col :span="6">检测算法：{{ algorithmDescriptions[cameras.pod.centroidData.algorithm].title || '未检测' }}</el-col>
+                                            <el-col :span="6">光斑半径：{{ cameras.pod.centroidData.success ? parseFloat(cameras.pod.centroidData.radius).toFixed(3) + ' px' : '未检测' }}</el-col>
+                                            <el-col :span="6">质心X坐标：{{ cameras.pod.centroidData.success ? parseFloat(cameras.pod.centroidData.x).toFixed(3) + ' px' : '未检测' }}</el-col>
+                                            <el-col :span="6">质心Y坐标：{{ cameras.pod.centroidData.success ? parseFloat(cameras.pod.centroidData.y).toFixed(3) + ' px' : '未检测' }}</el-col>
+                                        </el-row>
+                                        <el-row :gutter="20">
+                                            <el-col :span="6">图像宽度：{{ cameras.pod.imageInfo.width || '未检测' }}</el-col>
+                                            <el-col :span="6">图像高度：{{ cameras.pod.imageInfo.height || '未检测' }}</el-col>
+                                            <el-col :span="6">
+                                                <div :class="{
+                                                    'negative-diff': cameras.pod.centroidData.success && Math.abs(getCameraXDifference('pod')) < 1,
+                                                    'positive-diff': cameras.pod.centroidData.success && Math.abs(getCameraXDifference('pod')) >= 1
+                                                }">
+                                                    质心X偏差：{{ cameras.pod.centroidData.success ? parseFloat(getCameraXDifference('pod')).toFixed(3) + ' px' : '未检测' }}
+                                                </div>
+                                            </el-col>
+                                            <el-col :span="6">
+                                                <div :class="{
+                                                    'negative-diff': cameras.pod.centroidData.success && Math.abs(getCameraYDifference('pod')) < 1,
+                                                    'positive-diff': cameras.pod.centroidData.success && Math.abs(getCameraYDifference('pod')) >= 1
+                                                }">
+                                                    质心Y偏差：{{ cameras.pod.centroidData.success ? parseFloat(getCameraYDifference('pod')).toFixed(3) + ' px' : '未检测' }}
+                                                </div>
+                                            </el-col>
+                                        </el-row>
+                                    </div>
+                                </el-card>
+                            </div>
+                            <div>
+                                <h3 style="text-align: center;">请观察吊舱相机图像，确保光斑中心位于图像中心</h3>
+                            </div>
+                        
+                            <!-- 算法选择 -->
+                            <div style="margin-top: 15px; text-align: center;">
+                                <el-radio-group v-model="cameras.pod.centroidData.algorithm" size="small" @change="(val) => onAlgorithmChange('pod', val)">
+                                    <el-radio-button label="weighted">加权质心法</el-radio-button>
+                                    <el-radio-button label="gray">灰度质心法</el-radio-button>
+                                    <el-radio-button label="gaussian">高斯拟合法</el-radio-button>
+                                    <el-radio-button label="contour">椭圆拟合法</el-radio-button>
+                                </el-radio-group>
+                            </div>
                         </div>
                     </el-card>
-                </el-col>
-                <el-col :span="8">
-                    <el-card>
-                        <div slot="header">
-                            <span>设备状态</span>
-                        </div>
-                        <el-descriptions border>
-                            <el-descriptions-item label="相机状态">
-                                
-                            </el-descriptions-item>
-                        </el-descriptions>
-                    </el-card>
-                </el-col>
-            </el-row>
-        </div>
-        <div v-else>
-            <p>这是第三个判断的内容。</p>
+                    
+                    <!-- 第三个卡片（右侧） -->
+                    <div class="column-container">
+                        <!-- 上方卡片 -->
+                                                 <!-- 下方卡片 -->
+                        <el-card class="equal-height-card">
+                            <div slot="header">
+                                <span>靶面监控相机</span>
+                                <!-- 开始显示视频按钮 -->
+                                <el-button 
+                                    style="float: right; margin-left: 10px" 
+                                    :type="cameras.detection.isStreaming ? 'danger' : 'success'"
+                                    :loading="loading"
+                                    @click="toggleCameraImage('detection')">
+                                    {{ cameras.detection.isStreaming ? '停止' : '开始' }}
+                                </el-button>
+                                <!-- 中心十字线开关 -->
+                                <el-switch
+                                    style="float: right; margin-top: 8px; margin-right: 15px;"
+                                    v-model="cameras.detection.drawSettings.drawCrosshair"
+                                    active-text="显示中心十字"
+                                    inactive-text="隐藏中心十字"
+                                    @change="(val) => toggleCrosshairDisplay('detection', val)">
+                                </el-switch>
+                                <!-- 质心绘制开关 -->
+                                <el-switch
+                                    style="float: right; margin-top: 8px; margin-right: 15px;"
+                                    v-model="cameras.detection.drawSettings.drawCentroid"
+                                    active-text="启用质心绘制"
+                                    inactive-text="关闭质心绘制"
+                                    @change="(val) => toggleCentroidDisplay('detection', val)">
+                                </el-switch>
+                            </div>
+                            <div class="image-container">
+                                <img :src="cameras.detection.currentFrame" v-if="cameras.detection.currentFrame" alt="Video Stream"/>
+                                <div v-else class="no-signal">无信号</div>
+                            </div>
+                        </el-card>
+                        
+                        <!-- 下方卡片 -->
+                        <el-card class="equal-height-card">
+                            <div slot="header">
+                                <span>卡片5标题</span>
+                            </div>
+                            <div>
+                                <!-- 内容3-2 -->
+                            </div>
+                        </el-card>
+                    </div>
+                </div>
+            </div>
+
+            <div v-else-if="referenceAxis.type === 'transmit'">
+                <p>发射光轴相关内容</p>
+                <!-- 这里添加接收光轴相关的组件和内容 -->
+            </div>
         </div>
     </div>
 </div>

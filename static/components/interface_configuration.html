@@ -1,9 +1,23 @@
 <div class="interface_configuration-root">
-    <div class="main-content">
-        <template v-for="serial_name in displayOrder">
+    <div v-loading="!isLoaded" class="main-content">
+        <template v-if="isLoaded" v-for="serial_name in displayOrder">
             <el-descriptions class="margin-top" :title="serial_name" :column="3" border :key="serial_name">
                 <template slot="extra">
-                    <el-button type="primary" size="small" @click="editSerialSetting(serial_name)" :loading="loading">编辑</el-button>
+                    <el-button 
+                        :type="serial_settings[serial_name].is_connected ? 'danger' : 'success'"
+                        size="small"
+                        @click="serial_settings[serial_name].is_connected ? 
+                               disconnectDevice(serial_name) : connectDevice(serial_name)"
+                        :loading="loading">
+                        {{ serial_settings[serial_name].is_connected ? '断开' : '连接' }}
+                    </el-button>
+                    <el-button 
+                        type="primary" 
+                        size="small" 
+                        @click="editSerialSetting(serial_name)" 
+                        :loading="loading">
+                        编辑
+                    </el-button>
                 </template>
                 <el-descriptions-item label="协议">{{ serial_settings[serial_name].protocol }}</el-descriptions-item>
                 <el-descriptions-item label="串口号">{{ serial_settings[serial_name].port }}</el-descriptions-item>
@@ -13,7 +27,11 @@
                 <el-descriptions-item label="校验位">{{ serial_settings[serial_name].parity }}</el-descriptions-item>
                 <el-descriptions-item label="流控制">{{ serial_settings[serial_name].flowcontrol }}</el-descriptions-item>
                 <el-descriptions-item label="超时时间">{{ serial_settings[serial_name].timeout }}</el-descriptions-item>
-                <el-descriptions-item label="是否连接">{{ serial_settings[serial_name].is_connected ? '是' : '否' }}</el-descriptions-item>
+                <el-descriptions-item label="连接状态">
+                    <el-tag :type="serial_settings[serial_name].is_connected ? 'success' : 'danger'">
+                        {{ serial_settings[serial_name].is_connected ? '已连接' : '未连接' }}
+                    </el-tag>
+                </el-descriptions-item>
             </el-descriptions>
         </template>
     </div>

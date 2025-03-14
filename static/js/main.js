@@ -1,95 +1,3 @@
-window.DeviceManager = {
-    // 默认串口设置，当数据库中没有数据时使用
-    serial_settings:{
-        'light_source':{
-            protocol:'RS232',
-            port:'COM1',
-            baudrate:'9600',
-            databits:'8',
-            stopbits:'1',
-            parity:'none',
-            flowcontrol:'none',
-            timeout:'1000',
-            is_connected: false
-        },
-        'ccd_camera_sys':{
-            protocol:'RS232',
-            port:'COM2',
-            baudrate:'9600',
-            databits:'8',
-            stopbits:'1',
-            parity:'none',
-            flowcontrol:'none',
-            timeout:'1000',
-            is_connected: false
-        },
-        'ccd_camera_pod':{
-            protocol:'RS232',
-            port:'COM3',
-            baudrate:'9600',
-            databits:'8',
-            stopbits:'1',
-            parity:'none',
-            flowcontrol:'none',
-            timeout:'1000',
-            is_connected: false
-        },
-        'delay_module':{
-            protocol:'RS232',
-            port:'COM3',
-            baudrate:'9600',
-            databits:'8',
-            parity:'none',
-            flowcontrol:'none',
-            timeout:'1000',
-            is_connected: false
-        },
-        'motor1':{
-            protocol:'RS232',
-            port:'COM4',
-            baudrate:'9600',
-            databits:'8',
-            stopbits:'1',
-            parity:'none',
-            flowcontrol:'none',
-            timeout:'1000',
-            is_connected: false
-        },
-        'motor2':{
-            protocol:'RS232',
-            port:'COM5',
-            baudrate:'9600',
-            databits:'8',
-            stopbits:'1',
-            parity:'none',
-            flowcontrol:'none',
-            timeout:'1000',
-            is_connected: false
-        },
-        'motor3':{
-            protocol:'RS232',
-            port:'COM6',
-            baudrate:'9600',
-            databits:'8',
-            stopbits:'1',
-            parity:'none',
-            flowcontrol:'none',
-            timeout:'1000',
-            is_connected: false
-        }
-    },
-    //前端显示顺序，为避免因json文件转换而导致的乱序
-    displayOrder:[
-        'light_source',
-        'ccd_camera_sys',
-        'ccd_camera_pod',
-        'delay_module',
-        'motor1',
-        'motor2',
-        'motor3'
-    ]
-}
-
 const app = new Vue({
     el: '#app',
     data() {
@@ -98,83 +6,14 @@ const app = new Vue({
             message: 'Hello Vue!',
             currentComponent: null,
             loadedComponents: {},
-            serial_settings:{
-                'light_source':{
-                    protocol:'RS232',
-                    port:'COM1',
-                    baudrate:'9600',
-                    databits:'8',
-                    stopbits:'1',
-                    parity:'none',
-                    flowcontrol:'none',
-                    timeout:'1000',
-                    is_connected: false
-                },
-                'ccd_camera_sys':{
-                    protocol:'RS232',
-                    port:'COM2',
-                    baudrate:'9600',
-                    databits:'8',
-                    stopbits:'1',
-                    parity:'none',
-                    flowcontrol:'none',
-                    timeout:'1000',
-                    is_connected: false
-                },
-                'ccd_camera_pod':{
-                    protocol:'RS232',
-                    port:'COM3',
-                    baudrate:'9600',
-                    databits:'8',
-                    stopbits:'1',
-                    parity:'none',
-                    flowcontrol:'none',
-                    timeout:'1000',
-                    is_connected: false
-                },
-                'delay_module':{
-                    protocol:'RS232',
-                    port:'COM3',
-                    baudrate:'9600',
-                    databits:'8',
-                    parity:'none',
-                    flowcontrol:'none',
-                    timeout:'1000',
-                    is_connected: false
-                },
-                'motor1':{
-                    protocol:'RS232',
-                    port:'COM4',
-                    baudrate:'9600',
-                    databits:'8',
-                    stopbits:'1',
-                    parity:'none',
-                    flowcontrol:'none',
-                    timeout:'1000',
-                    is_connected: false
-                },
-                'motor2':{
-                    protocol:'RS232',
-                    port:'COM5',
-                    baudrate:'9600',
-                    databits:'8',
-                    stopbits:'1',
-                    parity:'none',
-                    flowcontrol:'none',
-                    timeout:'1000',
-                    is_connected: false
-                },
-                'motor3':{
-                    protocol:'RS232',
-                    port:'COM6',
-                    baudrate:'9600',
-                    databits:'8',
-                    stopbits:'1',
-                    parity:'none',
-                    flowcontrol:'none',
-                    timeout:'1000',
-                    is_connected: false
-                }
+            deviceStatus: {
+                'light_source': false,
+                'ccd_camera_sys': false,
+                'ccd_camera_pod': false,
+                'delay_module': false,
+                'motor1': false,
+                'motor2': false,
+                'motor3': false
             }
         }
     },
@@ -236,7 +75,26 @@ const app = new Vue({
             }catch(error){
                 console.error(`Failed to load component: ${name}`, error);
             }
+        },
+        // 更新设备状态
+        updateDeviceStatus() {
+            axios.get('/api/devices_status')
+                .then(response => {
+                    if (response.data.success) {
+                        const statusData = response.data.data;
+                        for (const [deviceName, status] of Object.entries(statusData)) {
+                            this.$set(this.deviceStatus, deviceName, status);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('获取设备状态失败:', error);
+                });
         }
+    },
+    created() {
+        // 定期更新设备状态
+        setInterval(this.updateDeviceStatus, 5000);
     }
 });
 

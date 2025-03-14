@@ -1,9 +1,8 @@
-from flask import Flask, render_template, request
-from utils.db import init_db
-from api.serial_settings import serial_settings_bp
+from flask import Flask, render_template, request, send_from_directory
+from api.data_routes import data_bp
 from api.image_stream import image_stream_bp
+from api.device_routes import device_bp
 from extensions import socketio
-import eventlet
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 socketio.init_app(app)  # 初始化socketio
@@ -13,11 +12,14 @@ app.jinja_env.variable_start_string = "**DIM LIGHT**"
 app.jinja_env.variable_end_string = "**DIM LIGHT**"
 
 # 注册蓝图
-app.register_blueprint(serial_settings_bp)
 app.register_blueprint(image_stream_bp)
+app.register_blueprint(data_bp)
+app.register_blueprint(device_bp)
 
-# 初始化数据库
-init_db()
+# 图片静态路由
+@app.route('/static/img/<path:filename>')
+def serve_image(filename):
+    return send_from_directory('static/img', filename)
 
 @app.route('/')
 def index():
