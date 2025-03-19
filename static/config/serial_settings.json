@@ -55,9 +55,9 @@
             "timeout": "1000",
             "is_connected": false
         },
-        "motor2": {
+        "laser_1064nm": {
             "protocol": "RS232",
-            "port": "COM6",
+            "port": "COM8",
             "baudrate": "9600",
             "databits": "8",
             "stopbits": "1",

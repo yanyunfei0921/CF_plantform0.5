@@ -37,9 +37,10 @@ def handle_start_stream(data):
 @socketio.on('stop_stream', namespace='/camera')
 def handle_stop_stream(data):
     camera_id = data.get('camera_id', 'pod')
-    camera = camera_manager.get_camera(camera_id)
-    camera.stop_continuous_capture()
-    return {'success': True, 'message': f'停止 {camera_id} 相机流'}
+    # 直接使用相机管理类的remove_camera方法，一步完成所有清理工作
+    camera_manager.remove_camera(camera_id)
+    print(f"停止并移除 {camera_id} 相机")
+    return {'success': True, 'message': f'停止并移除 {camera_id} 相机'}
 
 @socketio.on('set_algorithm', namespace='/camera')
 def handle_set_algorithm(data):

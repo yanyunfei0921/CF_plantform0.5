@@ -328,7 +328,114 @@
                             </el-card>
                         </div>
                         <div v-if="referenceAxis.spectrum === 'laser'">
-                            <!-- 暂无，这个激光器得单独一个 -->>
+                            <el-card class="equal-height-card">
+                                <div slot="header">
+                                    <span>1064nm激光器控制</span>
+                                </div>
+                                <div>
+                                    <!-- 激光器开关控制 -->
+                                    <div style="text-align: center; margin-bottom: 20px;">
+                                        <el-button 
+                                            type="primary" 
+                                            @click="controlLaser1064nm(swirLaser.isLaserOn ? 0 : swirLaser.laserPower, swirLaser.frequency, swirLaser.pulseWidth,'toggle')"
+                                            :type="swirLaser.isLaserOn ? 'danger' : 'success'">
+                                            {{ swirLaser.isLaserOn ? '关闭1064nm激光器' : '开启1064nm激光器' }}
+                                        </el-button>
+                                    </div>
+                                    
+                                    <div style="padding: 0 20px;">
+                                        <!-- 激光功率控制 -->
+                                        <div class="power-control-container">
+                                            <div class="power-title">激光功率调节</div>
+                                            <div class="power-control">
+                                                <el-slider
+                                                    v-model="swirLaser.laserPower"
+                                                    :min="0"
+                                                    :max="1000"
+                                                    :disabled="!swirLaser.isLaserOn"
+                                                    @change="(val) => controlLaser1064nm(val, swirLaser.frequency, swirLaser.pulseWidth,'power')"
+                                                    :format-tooltip="(val) => (val/10) + '%'">
+                                                </el-slider>
+                                                <el-input-number
+                                                    v-model="swirLaser.laserPower"
+                                                    :min="0"
+                                                    :max="1000"
+                                                    :disabled="!swirLaser.isLaserOn"
+                                                    @change="(val) => controlLaser1064nm(val, swirLaser.frequency, swirLaser.pulseWidth,'power')"
+                                                    size="small"
+                                                    style="width: 100px; margin-left: 20px;">
+                                                </el-input-number>
+                                            </div>
+                                        </div>
+
+                                        <!-- 激光重频控制 -->
+                                        <div class="power-control-container" style="margin-top: 20px;">
+                                            <div class="power-title">激光重频调节 (Hz)</div>
+                                            <div class="power-control">
+                                                <el-slider
+                                                    v-model="swirLaser.frequency"
+                                                    :min="1"
+                                                    :max="500000"
+                                                    :disabled="!swirLaser.isLaserOn"
+                                                    @change="(val) => controlLaser1064nm(swirLaser.laserPower, val, swirLaser.pulseWidth,'frequency')"
+                                                    :format-tooltip="(val) => formatFrequency(val)">
+                                                </el-slider>
+                                                <el-input-number
+                                                    v-model="swirLaser.frequency"
+                                                    :min="1"
+                                                    :max="500000"
+                                                    :disabled="!swirLaser.isLaserOn"
+                                                    @change="(val) => controlLaser1064nm(swirLaser.laserPower, val, swirLaser.pulseWidth,'frequency')"
+                                                    size="small"
+                                                    style="width: 120px; margin-left: 20px;">
+                                                </el-input-number>
+                                            </div>
+                                        </div>
+
+                                        <!-- 激光脉宽控制 -->
+                                        <div class="power-control-container" style="margin-top: 20px;">
+                                            <div class="power-title">激光脉宽调节 (ns)</div>
+                                            <div class="power-control">
+                                                <el-slider
+                                                    v-model="swirLaser.pulseWidth"
+                                                    :min="5"
+                                                    :max="200"
+                                                    :disabled="!swirLaser.isLaserOn"
+                                                    @change="(val) => controlLaser1064nm(swirLaser.laserPower, swirLaser.frequency, val,'pulse_width')"
+                                                    :format-tooltip="(val) => val + ' ns'">
+                                                </el-slider>
+                                                <el-input-number
+                                                    v-model="swirLaser.pulseWidth"
+                                                    :min="5"
+                                                    :max="200"
+                                                    :disabled="!swirLaser.isLaserOn"
+                                                    @change="(val) => controlLaser1064nm(swirLaser.laserPower, swirLaser.frequency, val,'pulse_width')"
+                                                    size="small"
+                                                    style="width: 100px; margin-left: 20px;">
+                                                </el-input-number>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 激光器温度显示 -->
+                                    <div style="margin-top: 20px; padding: 0 20px; text-align: center;">
+                                        <el-card shadow="hover" class="temperature-display">
+                                            <div slot="header" style="padding: 5px;">
+                                                <span style="font-size: 14px;">激光器温度</span>
+                                                <el-button 
+                                                    type="text" 
+                                                    style="float: right; padding: 3px 0" 
+                                                    @click="getLaserTemperature">
+                                                    <i class="el-icon-refresh"></i>
+                                                </el-button>
+                                            </div>
+                                            <div style="font-size: 24px; color: #409EFF; padding: 10px;">
+                                                {{ swirLaser.temperature ? swirLaser.temperature.toFixed(2) + ' °C' : '-- °C' }}
+                                            </div>
+                                        </el-card>
+                                    </div>
+                                </div>
+                            </el-card>
                         </div>
 
                         <!-- 靶标选择 -->
@@ -821,38 +928,114 @@
                         
                         <!-- 激光设备控制 -->
                         <div v-if="referenceAxis.spectrum === 'laser'">
-                            <div style="text-align: center; margin-bottom: 20px;">
-                                <el-button 
-                                    type="primary"
-                                    @click="controlCompositeDevice('indicationLaser')"
-                                    :type="indicationLaser.isLaserOn ? 'danger' : 'success'">
-                                    {{ indicationLaser.isLaserOn ? '关闭指示激光' : '开启指示激光' }}
-                                </el-button>
-                            </div>
-                            <div style="padding: 0 20px;">
-                                <div class="power-control-container">
-                                    <div class="power-title">指示激光功率调节</div>
-                                    <div class="power-control">
-                                        <el-slider
-                                            v-model="indicationLaser.laserPower"
-                                            :min="0"
-                                            :max="1000"
-                                            :disabled="!indicationLaser.isLaserOn"
-                                            @change="(val) => controlCompositeDevice('indicationLaser', val)"
-                                            :format-tooltip="(val) => formatCompositeDeviceTooltip('indicationLaser', val)">
-                                        </el-slider>
-                                        <el-input-number
-                                            v-model="indicationLaser.laserPower"
-                                            :min="0"
-                                            :max="1000"
-                                            :disabled="!indicationLaser.isLaserOn"
-                                            @change="(val) => controlCompositeDevice('indicationLaser', val)"
-                                            size="small"
-                                            style="width: 100px; margin-left: 20px;">
-                                        </el-input-number>
+                            <el-card class="equal-height-card">
+                                <div slot="header">
+                                    <span>1064nm激光器控制</span>
+                                </div>
+                                <div>
+                                    <!-- 激光器开关控制 -->
+                                    <div style="text-align: center; margin-bottom: 20px;">
+                                        <el-button 
+                                            type="primary" 
+                                            @click="controlLaser1064nm(swirLaser.isLaserOn ? 0 : swirLaser.laserPower, swirLaser.frequency, swirLaser.pulseWidth)"
+                                            :type="swirLaser.isLaserOn ? 'danger' : 'success'">
+                                            {{ swirLaser.isLaserOn ? '关闭1064nm激光器' : '开启1064nm激光器' }}
+                                        </el-button>
+                                    </div>
+                                    
+                                    <div style="padding: 0 20px;">
+                                        <!-- 激光功率控制 -->
+                                        <div class="power-control-container">
+                                            <div class="power-title">激光功率调节</div>
+                                            <div class="power-control">
+                                                <el-slider
+                                                    v-model="swirLaser.laserPower"
+                                                    :min="0"
+                                                    :max="1000"
+                                                    :disabled="!swirLaser.isLaserOn"
+                                                    @change="(val) => controlLaser1064nm(val, swirLaser.frequency, swirLaser.pulseWidth)"
+                                                    :format-tooltip="(val) => (val/10) + '%'">
+                                                </el-slider>
+                                                <el-input-number
+                                                    v-model="swirLaser.laserPower"
+                                                    :min="0"
+                                                    :max="1000"
+                                                    :disabled="!swirLaser.isLaserOn"
+                                                    @change="(val) => controlLaser1064nm(val, swirLaser.frequency, swirLaser.pulseWidth)"
+                                                    size="small"
+                                                    style="width: 100px; margin-left: 20px;">
+                                                </el-input-number>
+                                            </div>
+                                        </div>
+
+                                        <!-- 激光重频控制 -->
+                                        <div class="power-control-container" style="margin-top: 20px;">
+                                            <div class="power-title">激光重频调节 (Hz)</div>
+                                            <div class="power-control">
+                                                <el-slider
+                                                    v-model="swirLaser.frequency"
+                                                    :min="1"
+                                                    :max="500000"
+                                                    :disabled="!swirLaser.isLaserOn"
+                                                    @change="(val) => controlLaser1064nm(swirLaser.laserPower, val, swirLaser.pulseWidth)"
+                                                    :format-tooltip="(val) => formatFrequency(val)">
+                                                </el-slider>
+                                                <el-input-number
+                                                    v-model="swirLaser.frequency"
+                                                    :min="1"
+                                                    :max="500000"
+                                                    :disabled="!swirLaser.isLaserOn"
+                                                    @change="(val) => controlLaser1064nm(swirLaser.laserPower, val, swirLaser.pulseWidth)"
+                                                    size="small"
+                                                    style="width: 120px; margin-left: 20px;">
+                                                </el-input-number>
+                                            </div>
+                                        </div>
+
+                                        <!-- 激光脉宽控制 -->
+                                        <div class="power-control-container" style="margin-top: 20px;">
+                                            <div class="power-title">激光脉宽调节 (ns)</div>
+                                            <div class="power-control">
+                                                <el-slider
+                                                    v-model="swirLaser.pulseWidth"
+                                                    :min="5"
+                                                    :max="200"
+                                                    :disabled="!swirLaser.isLaserOn"
+                                                    @change="(val) => controlLaser1064nm(swirLaser.laserPower, swirLaser.frequency, val)"
+                                                    :format-tooltip="(val) => val + ' ns'">
+                                                </el-slider>
+                                                <el-input-number
+                                                    v-model="swirLaser.pulseWidth"
+                                                    :min="5"
+                                                    :max="200"
+                                                    :disabled="!swirLaser.isLaserOn"
+                                                    @change="(val) => controlLaser1064nm(swirLaser.laserPower, swirLaser.frequency, val)"
+                                                    size="small"
+                                                    style="width: 100px; margin-left: 20px;">
+                                                </el-input-number>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 激光器温度显示 -->
+                                    <div style="margin-top: 20px; padding: 0 20px; text-align: center;">
+                                        <el-card shadow="hover" class="temperature-display">
+                                            <div slot="header" style="padding: 5px;">
+                                                <span style="font-size: 14px;">激光器温度</span>
+                                                <el-button 
+                                                    type="text" 
+                                                    style="float: right; padding: 3px 0" 
+                                                    @click="getLaserTemperature">
+                                                    <i class="el-icon-refresh"></i>
+                                                </el-button>
+                                            </div>
+                                            <div style="font-size: 24px; color: #409EFF; padding: 10px;">
+                                                {{ swirLaser.temperature ? swirLaser.temperature.toFixed(2) + ' °C' : '-- °C' }}
+                                            </div>
+                                        </el-card>
                                     </div>
                                 </div>
-                            </div>
+                            </el-card>
                         </div>
                     </el-card>
                     

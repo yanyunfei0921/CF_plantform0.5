@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from utils.device_manager import DeviceManager, LightSourceDevice
+from time import sleep
 
 # 创建蓝图
 device_bp = Blueprint('device', __name__)
@@ -70,10 +71,12 @@ def control_composite_device():
             return jsonify(success=False, message="复合光源设备未添加")
         
         light_source = device_manager.devices['light_source']
+        # motor_three_axis = device_manager.devices['motor_three_axis']
         if not light_source.is_connected:
             return jsonify(success=False, message="复合光源设备未连接")
 
         if device_type == 'indicationLaser':
+            # motor_three_axis.set_motor_position(value)
             success = light_source.set_indication_laser_power(value)
         elif device_type == 'blackBody':
             success = light_source.set_black_body_temperature(value)
@@ -88,3 +91,46 @@ def control_composite_device():
         print(f"控制复合光源设备出错: {str(e)}")
         # 不要在异常处理中改变设备状态
         return jsonify(success=False, message=f"操作异常: {str(e)}")
+    
+@device_bp.route('/api/control_laser_1064nm', methods=['POST'])
+def control_laser_1064nm():
+    device_manager = get_device_manager()
+    data = request.json
+    power = data.get('power', 0)
+    frequency = data.get('frequency', 0)
+    pulse_width = data.get('pulse_width', 0)
+    operation_type = data.get('operation_type', 'toggle')
+    try:
+        laser_1064nm = device_manager.devices['laser_1064nm']
+        if not laser_1064nm.is_connected:
+            return jsonify(success=False, message="激光器未连接")
+        if operation_type == 'toggle':
+            laser_1064nm.reset_receive_stack()
+            sleep(0.1)
+            laser_1064nm.set_laser_power(power)
+            sleep(0.1)
+            laser_1064nm.set_laser_frequency(frequency)
+            sleep(0.1)
+            laser_1064nm.set_laser_pulse_width(pulse_width)
+            return jsonify(success=True, message="操作成功")
+        elif operation_type == 'power':
+            laser_1064nm.set_laser_power(power)
+            return jsonify(success=True, message="操作成功")
+        elif operation_type == 'frequency':
+            laser_1064nm.set_laser_frequency(frequency)
+            return jsonify(success=True, message="操作成功")
+        elif operation_type == 'pulse_width':
+            laser_1064nm.set_laser_pulse_width(pulse_width)
+        return jsonify(success=True, message="操作成功")
+    except Exception as e: 
+        return jsonify(success=False, message=f"操作异常: {str(e)}")
+        
+@device_bp.route('/api/get_laser_temperature', methods=['GET'])
+def get_laser_temperature():
+    device_manager = get_device_manager()
+    laser_1064nm = device_manager.devices['laser_1064nm']
+    if not laser_1064nm.is_connected:
+        return jsonify(success=False, message="激光器未连接")
+    temperature = laser_1064nm.get_laser_temperature()
+    return jsonify(success=True, message="操作成功", temperature=temperature)
+

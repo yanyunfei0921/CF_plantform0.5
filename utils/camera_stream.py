@@ -160,10 +160,28 @@ class CameraStreamHandler:
     def get_frame(self):
         """获取一帧图像并进行处理"""
         try:
-            # 如果相机未连接，返回空
+            # 如果相机未连接，尝试自动连接
             if not self.camera_device:
-                return None
+                print(f"相机 {self.camera_id} 未连接，尝试自动连接...")
+                # 根据camera_id设置对应的device_index
+                device_index = 0  # 默认使用第一个设备
                 
+                if self.camera_id == "detection":
+                    device_index = 0
+                elif self.camera_id == "system":
+                    device_index = 1
+                elif self.camera_id == "pod":
+                    device_index = 2
+                    
+                # 调用已有的connect_camera方法
+                connection_result = self.connect_camera(device_index)
+                
+                if not connection_result:
+                    print(f"相机 {self.camera_id} 自动连接失败")
+                    return None
+                    
+                print(f"相机 {self.camera_id} 已自动连接")
+                    
             # 从相机获取帧
             frame = self.camera_device.grab_frame()
             

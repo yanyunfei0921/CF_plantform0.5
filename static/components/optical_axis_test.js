@@ -113,7 +113,10 @@ if(!Vue.options.components['optical_axis_test']){
                 // 这个激光器逻辑比较特别，需要延时模块硬件触发，暂时不管它的通信和控制
                 swirLaser :{
                     isLaserOn: false,
-                    laserPower: 0
+                    laserPower: 80,
+                    frequency: 10000, // 默认10kHz
+                    pulseWidth: 100,  // 默认100ns
+                    temperature: 0 // 默认无温度
                 },
                 
                 // 基准光轴(transmit,receive)(ir,visible,laser)
@@ -432,6 +435,72 @@ if(!Vue.options.components['optical_axis_test']){
                 }
             },
             
+            // ========== 1064nm激光器控制方法 ==========
+            /**
+             * 
+             * @param {int} power 
+             * @param {int} frequency 
+             * @param {int} pulse_width 
+             * @param {string} operation_type -操作类型：'toggle','power','frequency','pulse_width'
+             */
+            async controlLaser1064nm(power, frequency, pulse_width,operation_type) {
+                try {
+                    const response = await axios.post('/api/control_laser_1064nm', {
+                        power: power,
+                        frequency: frequency,
+                        pulse_width: pulse_width,
+                        operation_type: operation_type
+                    });
+                    if (response.data.success) {
+                        if (operation_type === 'toggle') {
+                            this.swirLaser.isLaserOn = !this.swirLaser.isLaserOn;
+                        }
+                        this.$message.success('操作成功');
+                    } else {
+                        this.$message.error('操作失败：' + response.data.message);
+                    }
+                } catch (error) {
+                    this.$message.error('操作失败：' + error.message);
+                }
+            },
+
+            // ========== 获取激光器温度 ==========
+            async getLaserTemperature() {
+                try {
+                    const response = await axios.get('/api/get_laser_temperature');
+                    if (response.data.success) {
+                        this.swirLaser.temperature = response.data.temperature;
+                        console.log('获取激光器温度成功:', this.swirLaser.temperature);
+                    } else {
+                        console.error('获取激光器温度失败:', response.data.message || '未知错误');
+                    }
+                } catch (error) {
+                    console.error('获取激光器温度请求失败:', error.message || '连接服务器出错');
+                }
+            },
+            
+            // ========== 开始激光器温度轮询 ==========
+            startTemperaturePolling() {
+                this.stopTemperaturePolling(); // 确保先停止任何可能存在的轮询
+                this.getLaserTemperature(); // 立即获取一次温度
+                
+                // 设置3秒轮询间隔
+                this._temperatureTimer = setInterval(() => {
+                    this.getLaserTemperature();
+                }, 3000);
+                
+                console.log('启动激光器温度轮询');
+            },
+            
+            // ========== 停止激光器温度轮询 ==========
+            stopTemperaturePolling() {
+                if (this._temperatureTimer) {
+                    clearInterval(this._temperatureTimer);
+                    this._temperatureTimer = null;
+                    console.log('停止激光器温度轮询');
+                }
+            },
+
             // ========== 切换步骤时的处理 ==========
             cleanupStep(step) {
                 // 步骤2: 停止pod相机流和关闭指示激光
@@ -535,6 +604,21 @@ if(!Vue.options.components['optical_axis_test']){
                 };
                 this.$message.success(`测试 ${index + 1} 已完成`);
             },
+
+            /**
+             * 格式化频率显示
+             * @param {number} frequency - 频率值(Hz)
+             * @returns {string} 格式化后的频率文本
+             */
+            formatFrequency(frequency) {
+                if (frequency >= 1000000) {
+                    return (frequency / 1000000).toFixed(1) + ' MHz';
+                } else if (frequency >= 1000) {
+                    return (frequency / 1000).toFixed(1) + ' kHz';
+                } else {
+                    return frequency + ' Hz';
+                }
+            },
         },
         computed: {
             // 获取指定相机的光斑中心与图像中心X方向偏差
@@ -584,6 +668,15 @@ if(!Vue.options.components['optical_axis_test']){
                 
                 // 初始化新的步骤
                 this.initStep(newVal);
+                
+                // 管理温度轮询
+                if (newVal === 3 || newVal === 4) {
+                    if (this.referenceAxis.spectrum === 'laser') {
+                        //this.startTemperaturePolling();
+                    }
+                } else {
+                    this.stopTemperaturePolling();
+                }
             },
 
             referenceAxis: {
@@ -593,11 +686,25 @@ if(!Vue.options.components['optical_axis_test']){
                     this.cleanupChangeAxis();
                 },
                 deep: true
+            },
+            
+            // 监听光谱类型变化，控制温度轮询
+            'referenceAxis.spectrum': function(newVal, oldVal) {
+                if (newVal === 'laser') {
+                    //this.startTemperaturePolling(); // 选择激光时启动轮询
+                } else if (oldVal === 'laser') {
+                    this.stopTemperaturePolling(); // 离开激光选项时停止轮询
+                }
             }
         },
         mounted() {
             // 不再自动初始化socket
             console.log('组件已挂载');
+            
+            // 如果当前是激光模式，启动温度轮询
+            if ((this.active === 3 || this.active === 4) && this.referenceAxis.spectrum === 'laser') {
+                //this.startTemperaturePolling();
+            }
         },
         beforeDestroy() {
             // 销毁前停止所有相机并断开连接
@@ -616,7 +723,9 @@ if(!Vue.options.components['optical_axis_test']){
                 axios.post('/api/set_laser_power', { power: 0 })
                     .catch(error => console.error('关闭激光失败:', error));
                     }
-
+            
+            // 确保停止温度轮询
+            this.stopTemperaturePolling();
         }
     });
 }

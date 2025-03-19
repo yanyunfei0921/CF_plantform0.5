@@ -8,12 +8,9 @@ const app = new Vue({
             loadedComponents: {},
             deviceStatus: {
                 'light_source': false,
-                'ccd_camera_sys': false,
-                'ccd_camera_pod': false,
-                'delay_module': false,
-                'motor1': false,
-                'motor2': false,
-                'motor3': false
+                'laser_1064nm': false,
+                'motor_three_axis': false,
+                'delay_module': false
             }
         }
     },

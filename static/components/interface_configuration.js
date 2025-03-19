@@ -24,10 +24,10 @@ if(!Vue.options.components['interface_configuration']){
                     displayOrder:[
                         'light_source',
                         'motor_three_axis',
+                        'laser_1064nm',
+                        'delay_module',
                         'ccd_camera_sys',
                         'ccd_camera_pod',
-                        'delay_module',
-                        'motor2',
                         'motor3'
                     ]
                 }
@@ -121,7 +121,9 @@ if(!Vue.options.components['interface_configuration']){
                         'light_source': 'light_source',
                         'ccd_camera_sys': 'ccd_camera',
                         'ccd_camera_pod': 'ccd_camera',
-                        'motor_three_axis': 'motor_three_axis'
+                        'motor_three_axis': 'motor_three_axis',
+                        'laser_1064nm': 'laser_1064nm',
+                        'delay_module': 'delay_module'
                         // 可以添加更多设备类型映射
                     };
                     return deviceTypes[device_name] || '';
