@@ -23,10 +23,10 @@ if(!Vue.options.components['interface_configuration']){
                     //前端显示顺序，为避免因json文件转换而导致的乱序
                     displayOrder:[
                         'light_source',
+                        'motor_three_axis',
                         'ccd_camera_sys',
                         'ccd_camera_pod',
                         'delay_module',
-                        'motor1',
                         'motor2',
                         'motor3'
                     ]
@@ -120,7 +120,8 @@ if(!Vue.options.components['interface_configuration']){
                     const deviceTypes = {
                         'light_source': 'light_source',
                         'ccd_camera_sys': 'ccd_camera',
-                        'ccd_camera_pod': 'ccd_camera'
+                        'ccd_camera_pod': 'ccd_camera',
+                        'motor_three_axis': 'motor_three_axis'
                         // 可以添加更多设备类型映射
                     };
                     return deviceTypes[device_name] || '';

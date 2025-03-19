@@ -65,8 +65,8 @@ if(!Vue.options.components['optical_axis_test']){
                             height: 0
                         },
                         drawSettings: {
-                            drawCentroid: false,
-                            drawCrosshair: false
+                            drawCentroid: true,
+                            drawCrosshair: true
                         }
                     }
                 },
@@ -123,7 +123,8 @@ if(!Vue.options.components['optical_axis_test']){
                 },
 
                 // 靶标(cross,star,four,usaf)
-                target: 'cross' // 默认十字靶标
+                target: 'cross', // 默认十字靶标
+                testAxes: [],  // 测试记录
             }
         },
         methods: {
@@ -253,6 +254,13 @@ if(!Vue.options.components['optical_axis_test']){
                     this.loading = false;
                     if (response && response.success) {
                         this.cameras[cameraId].isStreaming = false;
+                        // 清除当前帧数据，避免显示旧图像
+                        this.cameras[cameraId].currentFrame = null;
+                        // 重置质心数据
+                        this.cameras[cameraId].centroidData.success = false;
+                        // 重置图像信息
+                        this.cameras[cameraId].imageInfo.width = 0;
+                        this.cameras[cameraId].imageInfo.height = 0;
                         this.$message.success(`停止接收${cameraId}相机图像`);
                     } else {
                         this.$message.error('停止相机流失败');
@@ -353,92 +361,71 @@ if(!Vue.options.components['optical_axis_test']){
                 this.setCameraCrosshairDisplay(cameraId, enabled);
             },
             
-            // ========== 统一的设备控制方法 ==========
+            // ========== 统一的复合光源设备控制方法 ==========
             /**
-             * 统一的设备控制函数 - 用于开关设备或调整参数值
+             * 统一的复合光源设备控制函数 - 用于开关设备或调整参数值
              * @param {string} deviceType - 设备类型: 'indicationLaser', 'blackBody', 'visibleLight'
              * @param {number|null} [value] - 设置的值，如果为null/undefined则执行开关操作
-             * @returns {Promise<void>}
              */
             async controlCompositeDevice(deviceType, value) {
                 try {
                     let deviceConfig = null;
-                    let apiEndpoint = '';
-                    let paramName = '';
                     let deviceDisplayName = '';
                     let defaultValue = 0;
                     
-                    // 根据设备类型获取对应配置
+                    // 获取对应设备配置
                     switch (deviceType) {
                         case 'indicationLaser':
                             deviceConfig = this.indicationLaser;
-                            apiEndpoint = '/api/set_laser_power';
-                            paramName = 'power';
                             defaultValue = 500;
                             deviceDisplayName = '指示激光';
                             break;
                         case 'blackBody':
                             deviceConfig = this.infraredBlackBody;
-                            apiEndpoint = '/api/set_black_body_temperature';
-                            paramName = 'temperature';
                             defaultValue = 20000;
                             deviceDisplayName = '红外黑体';
                             break;
                         case 'visibleLight':
                             deviceConfig = this.visibleLight;
-                            apiEndpoint = '/api/set_visible_light';
-                            paramName = 'power';
-                            defaultValue = 250;
+                            defaultValue = 50;
                             deviceDisplayName = '可见光源';
                             break;
                         default:
                             throw new Error('未知设备类型');
                     }
                     
-                    // 获取设备状态和值的属性名
-                    const isOnProp = deviceType === 'indicationLaser' ? 'isLaserOn' : 
-                                     deviceType === 'blackBody' ? 'isInfraredBlackBodyOn' : 'isVisibleLightOn';
-                    const valueProp = deviceType === 'indicationLaser' ? 'laserPower' : 
-                                      deviceType === 'blackBody' ? 'temperature' : 'visibleLightPower';
-                    
-                    // 判断操作类型：开关操作还是调整参数值
+                    // 判断是开关操作还是调整参数值
                     const isToggle = value === undefined || value === null;
                     
-                    // 如果是调整参数值且设备已关闭，则直接返回
-                    if (!isToggle && !deviceConfig[isOnProp]) {
-                        return;
-                    }
+                    // 获取设备状态和值的属性名
+                    const isOnProp = deviceType === 'indicationLaser' ? 'isLaserOn' : 
+                                    deviceType === 'blackBody' ? 'isInfraredBlackBodyOn' : 'isVisibleLightOn';
+                    const valueProp = deviceType === 'indicationLaser' ? 'laserPower' : 
+                                    deviceType === 'blackBody' ? 'temperature' : 'visibleLightPower';
                     
                     // 计算要发送的值
                     let paramValue;
                     if (isToggle) {
-                        // 开关操作：如果已开启则关闭(0)，否则使用当前值或默认值
                         paramValue = deviceConfig[isOnProp] ? 0 : (deviceConfig[valueProp] || defaultValue);
                     } else {
-                        // 调整参数值：使用传入的值
+                        if (!deviceConfig[isOnProp]) return; // 设备已关闭时不调整值
                         paramValue = value;
                     }
                     
-                    // 构造请求参数
-                    const params = {};
-                    params[paramName] = paramValue;
+                    // 发送统一的API请求
+                    const response = await axios.post('/api/control_composite_device', {
+                        device_type: deviceType,
+                        value: paramValue
+                    });
                     
-                    // 发送请求
-                    const response = await axios.post(apiEndpoint, params);
-                    
+                    console.log(response.data);
                     if (response.data.success) {
                         if (isToggle) {
-                            // 开关操作：更新设备状态
                             deviceConfig[isOnProp] = !deviceConfig[isOnProp];
                             deviceConfig[valueProp] = deviceConfig[isOnProp] ? paramValue : 0;
-                        } else {
-                            // 无需更新状态，值已经通过v-model双向绑定更新
                         }
                     } else {
-                        const errorMsg = isToggle ? `${deviceDisplayName}控制失败` : 
-                                        (deviceType === 'indicationLaser' ? '激光功率调节失败' : 
-                                         deviceType === 'blackBody' ? '黑体温度调节失败' : '可见光亮度调节失败');
-                        this.$message.error(errorMsg);
+                        this.$message.error(`${deviceDisplayName}控制失败`);
                     }
                 } catch (error) {
                     this.$message.error('操作失败：' + error.message);
@@ -459,10 +446,8 @@ if(!Vue.options.components['optical_axis_test']){
                 }
                 // 步骤3: 停止相关相机流，并关闭并关闭黑体和可见光光源
                 else if (step === 3) {
-                    // 使用正确的相机ID
-                    const cameraIds = this.referenceAxisType === 'transmit' 
-                        ? ['system'] 
-                        : ['pod', 'detection'];
+                    // 直接尝试关闭所有相机，反正下面有判断
+                    const cameraIds = ['pod', 'system', 'detection'];
                         
                     cameraIds.forEach(cameraId => {
                         if (this.cameras[cameraId] && this.cameras[cameraId].isStreaming) {
@@ -480,7 +465,7 @@ if(!Vue.options.components['optical_axis_test']){
                 // 步骤4: 停止相关相机流
                 else if (step === 4) {
                     // 同样修改这里，使用正确的相机ID
-                    const cameraIds = this.referenceAxisType === 'transmit' 
+                    const cameraIds = this.referenceAxis.type === 'transmit' 
                         ? ['system'] 
                         : ['pod', 'detection'];
                         
@@ -511,12 +496,9 @@ if(!Vue.options.components['optical_axis_test']){
              * @returns {string} 格式化后的文本
              */
             formatCompositeDeviceTooltip(deviceType, value) {
-                // 增加空值检查
-                if (deviceType === null || deviceType === undefined) {
-                    return '0';
-                }
-                
-                if (value === null || value === undefined) {
+                // 保证参数安全性
+                if (deviceType === null || deviceType === undefined || 
+                    value === null || value === undefined) {
                     return '0';
                 }
                 
@@ -531,7 +513,28 @@ if(!Vue.options.components['optical_axis_test']){
                         // 确保无论什么情况都返回字符串
                         return String(value || 0);
                 }
-            }
+            },
+
+            // 添加测试方法
+            addTestAxis() {
+                this.testAxes.push({
+                    index: this.testAxes.length + 1,
+                    timestamp: new Date().toLocaleString(),
+                    status: 'pending', // pending/completed
+                    result: null
+                });
+                this.$message.success('已添加新测试，请进行调整后点击完成测试');
+            },
+            
+            // 完成测试方法
+            completeTest(index) {
+                this.testAxes[index].status = 'completed';
+                this.testAxes[index].result = {
+                    xDeviation: this.getCameraXDifference('system'),
+                    yDeviation: this.getCameraYDifference('system')
+                };
+                this.$message.success(`测试 ${index + 1} 已完成`);
+            },
         },
         computed: {
             // 获取指定相机的光斑中心与图像中心X方向偏差
@@ -563,10 +566,10 @@ if(!Vue.options.components['optical_axis_test']){
                         return ['pod'];
                     case 3:
                         // 步骤3：发射光轴需要用到系统相机，接收光轴需要用到吊舱相机和靶面监控相机
-                        return this.referenceAxisType === 'transmit' ? ['system'] : ['pod', 'detection'];
+                        return this.referenceAxis.type === 'transmit' ? ['system'] : ['pod', 'detection'];
                     case 4:
                         // 步骤4：发射光轴需要用到系统相机，接收光轴需要用到系统相机和靶面监控相机
-                        return this.referenceAxisType === 'transmit' ? ['system'] : ['pod', 'detection'];
+                        return this.referenceAxis.type === 'transmit' ? ['system'] : ['pod', 'detection'];
                     default:
                         return [];
                 }
@@ -583,9 +586,13 @@ if(!Vue.options.components['optical_axis_test']){
                 this.initStep(newVal);
             },
 
-            referenceAxisType(newValue, oldValue) {
-                console.log('切换到', newValue === 'transmit' ? '发射光轴' : '接收光轴');
-                this.cleanupChangeAxis();
+            referenceAxis: {
+                handler: function(newVal) {
+                    // 不比较新旧值，直接执行清理函数
+                    console.log('切换到', newVal.type === 'transmit' ? '发射光轴' : '接收光轴');
+                    this.cleanupChangeAxis();
+                },
+                deep: true
             }
         },
         mounted() {
@@ -602,13 +609,13 @@ if(!Vue.options.components['optical_axis_test']){
                 });
                             this.socket.disconnect();
                             this.socket = null;
-            }
+                        }
             
             // 确保激光关闭
             if (this.indicationLaser.isLaserOn) {
                 axios.post('/api/set_laser_power', { power: 0 })
                     .catch(error => console.error('关闭激光失败:', error));
-            }
+                    }
 
         }
     });

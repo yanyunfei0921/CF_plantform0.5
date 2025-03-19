@@ -2,7 +2,7 @@
     "serial_settings": {
         "light_source": {
             "protocol": "RS232",
-            "port": "COM1",
+            "port": "COM6",
             "baudrate": "115200",
             "databits": "8",
             "stopbits": "1",
@@ -44,9 +44,9 @@
             "timeout": "1000",
             "is_connected": false
         },
-        "motor1": {
+        "motor_three_axis": {
             "protocol": "RS232",    
-            "port": "COM5",
+            "port": "COM7",
             "baudrate": "9600",
             "databits": "8",
             "stopbits": "1",

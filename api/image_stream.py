@@ -8,9 +8,6 @@ image_stream_bp = Blueprint('image_stream', __name__)
 # 创建相机管理器实例
 camera_manager = CameraManager()
 
-# 默认添加一个相机处理器
-default_camera = camera_manager.add_camera("pod")
-
 # SocketIO 事件处理
 @socketio.on('connect', namespace='/camera')
 def handle_connect():
